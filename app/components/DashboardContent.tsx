@@ -1,6 +1,8 @@
 "use client";
 
+import { useState } from "react";
 import dynamic from "next/dynamic";
+import { WorkoutForm } from "./WorkoutForm";
 
 const CalendarContorll = dynamic(
   () =>
@@ -13,6 +15,8 @@ const CalendarContorll = dynamic(
 );
 
 export const DashboardContent = () => {
+  const [isWorkoutFormOpen, setIsWorkoutFormOpen] = useState(false);
+
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
       {/* Calendar Section */}
@@ -67,7 +71,10 @@ export const DashboardContent = () => {
           <h3 className="text-xl font-semibold text-gray-900 mb-4">빠른 실행</h3>
 
           <div className="space-y-3">
-            <button className="w-full bg-black text-white py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors font-medium text-left flex items-center">
+            <button
+              onClick={() => setIsWorkoutFormOpen(true)}
+              className="w-full bg-black text-white py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors font-medium text-left flex items-center"
+            >
               <span className="text-xl mr-3">⚡</span>
               새 운동 기록하기
             </button>
@@ -129,6 +136,12 @@ export const DashboardContent = () => {
           </a>
         </div>
       </div>
+
+      {/* Workout Form Modal */}
+      <WorkoutForm
+        isOpen={isWorkoutFormOpen}
+        onClose={() => setIsWorkoutFormOpen(false)}
+      />
     </div>
   );
 };
