@@ -10,8 +10,6 @@ const CustomDayButton = (props: React.ComponentProps<typeof DayButton>) => {
   // 특정 날짜에 표시할 텍스트 (예시)
   const getTextForDate = (date: Date) => {
     const day = date.getDate();
-    if (day === 15) return "운동";
-    if (day === 20) return "휴식";
     return "";
   };
 

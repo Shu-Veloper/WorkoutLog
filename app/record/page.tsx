@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
-import { X, Plus, Trash2 } from "lucide-react";
+import { useState, useEffect } from "react";
+import { X, Plus, Trash2, Save, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
+import Link from "next/link";
 
 interface WorkoutSet {
   id: string;
@@ -22,19 +23,26 @@ interface Exercise {
   sets: WorkoutSet[];
 }
 
-interface WorkoutFormProps {
-  isOpen: boolean;
-  onClose: () => void;
+interface WorkoutData {
+  date: string;
+  title: string;
+  startTime: string;
+  endTime: string;
+  exercises: Exercise[];
 }
 
-export const WorkoutForm = ({ isOpen, onClose }: WorkoutFormProps) => {
-  const [workoutTitle, setWorkoutTitle] = useState("");
-  const [workoutDate, setWorkoutDate] = useState(
-    new Date().toISOString().split("T")[0]
-  );
-  const [exercises, setExercises] = useState<Exercise[]>([]);
+export default function RecordPage() {
+  const [workoutData, setWorkoutData] = useState<WorkoutData>({
+    date: new Date().toISOString().split("T")[0],
+    title: "",
+    startTime: "",
+    endTime: "",
+    exercises: [],
+  });
 
-  // 운동 카테고리 옵션
+  const [loading, setLoading] = useState(false);
+
+  // 운동 카테고리와 단위 옵션
   const categories = [
     { value: "가슴", label: "가슴" },
     { value: "등", label: "등" },
@@ -46,56 +54,108 @@ export const WorkoutForm = ({ isOpen, onClose }: WorkoutFormProps) => {
     { value: "기타", label: "기타" },
   ];
 
-  // 운동 단위 옵션
   const units = [
     { value: "weight", label: "중량 운동 (kg × 회)" },
     { value: "bodyweight", label: "체중 운동 (회)" },
     { value: "cardio", label: "유산소 (분)" },
   ];
 
-  const addExercise = () => {
-    const newExercise: Exercise = {
-      id: Date.now().toString(),
-      name: "",
-      category: "가슴", // 기본값
-      unit: "weight", // 기본값
-      sets: [
-        {
-          id: Date.now().toString() + "_1",
-          weight: "80",
-          reps: "10",
-          duration: "",
-          distance: "",
-          completed: false,
-        },
-      ],
-    };
-    setExercises([...exercises, newExercise]);
-  };
+  // 캐시 키 생성
+  const getCacheKey = (date: string) => `workout_cache_${date}`;
 
-  const removeExercise = (exerciseId: string) => {
-    setExercises(exercises.filter((ex) => ex.id !== exerciseId));
-  };
-
-  const updateExerciseName = (exerciseId: string, name: string) => {
-    setExercises(
-      exercises.map((ex) => (ex.id === exerciseId ? { ...ex, name } : ex))
+  // 오래된 캐시 정리 (1일 이상된 캐시 삭제)
+  const cleanOldCache = () => {
+    const keys = Object.keys(localStorage);
+    const workoutCacheKeys = keys.filter((key) =>
+      key.startsWith("workout_cache_")
     );
+
+    workoutCacheKeys.forEach((key) => {
+      const date = key.replace("workout_cache_", "");
+      const cacheDate = new Date(date);
+      const today = new Date();
+      const diffTime = today.getTime() - cacheDate.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+      // 1일 이상된 캐시 삭제
+      if (diffDays > 1) {
+        localStorage.removeItem(key);
+      }
+    });
   };
 
-  const updateExerciseCategory = (exerciseId: string, category: string) => {
-    setExercises(
-      exercises.map((ex) => (ex.id === exerciseId ? { ...ex, category } : ex))
-    );
+  // 로컬스토리지에서 데이터 로드
+  useEffect(() => {
+    // 오래된 캐시 정리
+    cleanOldCache();
+
+    const cacheKey = getCacheKey(workoutData.date);
+    const cachedData = localStorage.getItem(cacheKey);
+
+    if (cachedData) {
+      try {
+        const parsed = JSON.parse(cachedData);
+        setWorkoutData(parsed);
+      } catch (error) {
+        console.error("캐시 데이터 파싱 오류:", error);
+      }
+    }
+  }, []);
+
+  // 데이터 변경 시 로컬스토리지에 저장
+  useEffect(() => {
+    const cacheKey = getCacheKey(workoutData.date);
+    localStorage.setItem(cacheKey, JSON.stringify(workoutData));
+  }, [workoutData]);
+
+  // 날짜 변경 시 해당 날짜의 캐시 로드
+  const handleDateChange = (newDate: string) => {
+    // 오래된 캐시 정리
+    cleanOldCache();
+
+    const cacheKey = getCacheKey(newDate);
+    const cachedData = localStorage.getItem(cacheKey);
+
+    if (cachedData) {
+      try {
+        const parsed = JSON.parse(cachedData);
+        setWorkoutData(parsed);
+      } catch (error) {
+        console.error("캐시 데이터 파싱 오류:", error);
+        setWorkoutData({
+          date: newDate,
+          title: "",
+          startTime: "",
+          endTime: "",
+          exercises: [],
+        });
+      }
+    } else {
+      setWorkoutData({
+        date: newDate,
+        title: "",
+        startTime: "",
+        endTime: "",
+        exercises: [],
+      });
+    }
   };
 
-  const updateExerciseUnit = (exerciseId: string, unit: string) => {
-    setExercises(
-      exercises.map((ex) => (ex.id === exerciseId ? { ...ex, unit } : ex))
-    );
+  // 운동 시간 계산
+  const calculateDuration = (start: string, end: string): number => {
+    if (!start || !end) return 0;
+
+    const startDate = new Date(`${workoutData.date}T${start}`);
+    const endDate = new Date(`${workoutData.date}T${end}`);
+
+    if (endDate < startDate) {
+      endDate.setDate(endDate.getDate() + 1);
+    }
+
+    return Math.round((endDate.getTime() - startDate.getTime()) / (1000 * 60));
   };
 
-  // unit에 따른 세트 헤더 라벨 결정
+  // 헤더와 placeholder 설정
   const getSetHeaders = (unit: string) => {
     switch (unit) {
       case "weight":
@@ -109,7 +169,6 @@ export const WorkoutForm = ({ isOpen, onClose }: WorkoutFormProps) => {
     }
   };
 
-  // unit에 따른 placeholder 결정
   const getPlaceholders = (unit: string) => {
     switch (unit) {
       case "weight":
@@ -123,9 +182,57 @@ export const WorkoutForm = ({ isOpen, onClose }: WorkoutFormProps) => {
     }
   };
 
+  // 운동 추가
+  const addExercise = () => {
+    const newExercise: Exercise = {
+      id: Date.now().toString(),
+      name: "",
+      category: "가슴",
+      unit: "weight",
+      sets: [
+        {
+          id: Date.now().toString() + "_1",
+          weight: "",
+          reps: "",
+          duration: "",
+          distance: "",
+          completed: false,
+        },
+      ],
+    };
+    setWorkoutData((prev) => ({
+      ...prev,
+      exercises: [...prev.exercises, newExercise],
+    }));
+  };
+
+  // 운동 삭제
+  const removeExercise = (exerciseId: string) => {
+    setWorkoutData((prev) => ({
+      ...prev,
+      exercises: prev.exercises.filter((ex) => ex.id !== exerciseId),
+    }));
+  };
+
+  // 운동 정보 업데이트
+  const updateExercise = (
+    exerciseId: string,
+    field: keyof Exercise,
+    value: string
+  ) => {
+    setWorkoutData((prev) => ({
+      ...prev,
+      exercises: prev.exercises.map((ex) =>
+        ex.id === exerciseId ? { ...ex, [field]: value } : ex
+      ),
+    }));
+  };
+
+  // 세트 추가
   const addSet = (exerciseId: string) => {
-    setExercises(
-      exercises.map((ex) =>
+    setWorkoutData((prev) => ({
+      ...prev,
+      exercises: prev.exercises.map((ex) =>
         ex.id === exerciseId
           ? {
               ...ex,
@@ -142,28 +249,32 @@ export const WorkoutForm = ({ isOpen, onClose }: WorkoutFormProps) => {
               ],
             }
           : ex
-      )
-    );
+      ),
+    }));
   };
 
+  // 세트 삭제
   const removeSet = (exerciseId: string, setId: string) => {
-    setExercises(
-      exercises.map((ex) =>
+    setWorkoutData((prev) => ({
+      ...prev,
+      exercises: prev.exercises.map((ex) =>
         ex.id === exerciseId
           ? { ...ex, sets: ex.sets.filter((set) => set.id !== setId) }
           : ex
-      )
-    );
+      ),
+    }));
   };
 
+  // 세트 업데이트
   const updateSet = (
     exerciseId: string,
     setId: string,
     field: keyof WorkoutSet,
     value: string | boolean
   ) => {
-    setExercises(
-      exercises.map((ex) =>
+    setWorkoutData((prev) => ({
+      ...prev,
+      exercises: prev.exercises.map((ex) =>
         ex.id === exerciseId
           ? {
               ...ex,
@@ -172,76 +283,90 @@ export const WorkoutForm = ({ isOpen, onClose }: WorkoutFormProps) => {
               ),
             }
           : ex
-      )
-    );
+      ),
+    }));
   };
 
-  const handleSubmit = async () => {
+  // 최종 저장
+  const handleSave = async () => {
+    if (!workoutData.title || workoutData.exercises.length === 0) {
+      alert("운동 제목과 최소 하나의 운동 종목을 입력해주세요.");
+      return;
+    }
+
+    setLoading(true);
+
     try {
-      // 1. 현재 사용자 가져오기
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      // Supabase에 저장하는 로직 (기존 WorkoutForm과 동일)
+      const {
+        data: { user },
+        error: userError,
+      } = await supabase.auth.getUser();
       if (userError || !user) {
         alert("로그인이 필요합니다.");
         return;
       }
 
-      // 2. 운동(workout) 생성
+      const workoutDuration = calculateDuration(
+        workoutData.startTime,
+        workoutData.endTime
+      );
       const { data: workout, error: workoutError } = await supabase
-        .from('workouts')
+        .from("workouts")
         .insert({
           user_id: user.id,
-          date: workoutDate,
-          title: workoutTitle
+          date: workoutData.date,
+          title: workoutData.title,
+          duration: workoutDuration > 0 ? workoutDuration : null,
         })
         .select()
         .single();
 
       if (workoutError) {
-        console.error('Workout creation error:', workoutError);
+        console.error("Workout creation error:", workoutError);
         alert("운동 기록 생성에 실패했습니다.");
         return;
       }
 
-      // 3. 각 운동별로 처리
-      for (const exercise of exercises) {
-        // 3-1. 운동이 exercises 테이블에 있는지 확인
-        const { data: existingExercise, error: exerciseSelectError } = await supabase
-          .from('exercises')
-          .select('id')
-          .eq('name', exercise.name)
-          .eq('category', exercise.category)
-          .eq('unit', exercise.unit)
-          .single();
+      // 운동 종목별 저장
+      for (const exercise of workoutData.exercises) {
+        const { data: existingExercise, error: exerciseSelectError } =
+          await supabase
+            .from("exercises")
+            .select("id")
+            .eq("name", exercise.name)
+            .eq("category", exercise.category)
+            .eq("unit", exercise.unit)
+            .single();
 
         let exerciseId: string;
 
-        if (exerciseSelectError && exerciseSelectError.code === 'PGRST116') {
-          // 운동이 없으면 새로 생성
-          const { data: newExercise, error: exerciseInsertError } = await supabase
-            .from('exercises')
-            .insert({
-              name: exercise.name,
-              category: exercise.category,
-              unit: exercise.unit
-            })
-            .select('id')
-            .single();
+        if (exerciseSelectError && exerciseSelectError.code === "PGRST116") {
+          const { data: newExercise, error: exerciseInsertError } =
+            await supabase
+              .from("exercises")
+              .insert({
+                name: exercise.name,
+                category: exercise.category,
+                unit: exercise.unit,
+              })
+              .select("id")
+              .single();
 
           if (exerciseInsertError) {
-            console.error('Exercise creation error:', exerciseInsertError);
+            console.error("Exercise creation error:", exerciseInsertError);
             alert(`운동 "${exercise.name}" 생성에 실패했습니다.`);
             return;
           }
           exerciseId = newExercise.id;
         } else if (exerciseSelectError) {
-          console.error('Exercise lookup error:', exerciseSelectError);
+          console.error("Exercise lookup error:", exerciseSelectError);
           alert(`운동 "${exercise.name}" 조회에 실패했습니다.`);
           return;
         } else {
           exerciseId = existingExercise!.id;
         }
 
-        // 3-2. 세트 데이터 생성
         const setsToInsert = exercise.sets.map((set, index) => {
           const setData: {
             workout_id: string;
@@ -256,18 +381,15 @@ export const WorkoutForm = ({ isOpen, onClose }: WorkoutFormProps) => {
             workout_id: workout.id,
             exercise_id: exerciseId,
             set_number: index + 1,
-            completed: set.completed
+            completed: set.completed,
           };
 
-          // unit에 따라 필드 매핑
           if (exercise.unit === "cardio") {
-            // 유산소: weight → distance, reps → duration
             setData.distance = set.weight ? parseFloat(set.weight) : null;
-            setData.duration = set.reps ? parseInt(set.reps) * 60 : null; // 분을 초로 변환
+            setData.duration = set.reps ? parseInt(set.reps) * 60 : null;
             setData.weight = null;
             setData.reps = null;
           } else {
-            // weight/bodyweight: 그대로 유지
             setData.weight = set.weight ? parseFloat(set.weight) : null;
             setData.reps = set.reps ? parseInt(set.reps) : null;
             setData.duration = null;
@@ -277,68 +399,139 @@ export const WorkoutForm = ({ isOpen, onClose }: WorkoutFormProps) => {
           return setData;
         });
 
-        // 3-3. workout_sets 테이블에 세트 데이터 삽입
         const { error: setsError } = await supabase
-          .from('workout_sets')
+          .from("workout_sets")
           .insert(setsToInsert);
 
         if (setsError) {
-          console.error('Sets creation error:', setsError);
+          console.error("Sets creation error:", setsError);
           alert(`"${exercise.name}" 세트 기록에 실패했습니다.`);
           return;
         }
       }
 
-      alert("운동 기록이 성공적으로 저장되었습니다!");
-      onClose();
+      // 저장 성공 시 캐시 삭제
+      const cacheKey = getCacheKey(workoutData.date);
+      localStorage.removeItem(cacheKey);
 
+      alert("운동 기록이 성공적으로 저장되었습니다!");
+
+      // 홈으로 이동
+      window.location.href = "/";
     } catch (error) {
-      console.error('Unexpected error:', error);
+      console.error("Unexpected error:", error);
       alert("예상치 못한 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
     }
   };
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-lg max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-4xl mx-auto px-4">
         {/* Header */}
-        <div className="flex justify-between items-center p-6 border-b">
-          <h2 className="text-2xl font-bold text-gray-900">새 운동 기록</h2>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-6 w-6" />
-          </Button>
+        <div className="mb-8">
+          <div className="flex items-center justify-between mb-4">
+            <Link
+              href="/"
+              className="flex items-center text-gray-600 hover:text-gray-800"
+            >
+              <ArrowLeft className="h-5 w-5 mr-2" />
+              홈으로 돌아가기
+            </Link>
+            <Button
+              onClick={handleSave}
+              disabled={loading}
+              className="bg-black text-white hover:bg-gray-800 disabled:bg-gray-400"
+            >
+              <Save className="h-4 w-4 mr-2" />
+              {loading ? "저장 중..." : "기록 저장"}
+            </Button>
+          </div>
+          <h1 className="text-3xl font-bold text-gray-900">운동 기록하기</h1>
         </div>
 
-        {/* Form Content */}
-        <div className="p-6 space-y-6">
-          {/* 운동 제목 */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              운동 제목
-            </label>
-            <input
-              type="text"
-              value={workoutTitle}
-              onChange={(e) => setWorkoutTitle(e.target.value)}
-              placeholder="예: 가슴 운동, 하체 데이"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
-            />
-          </div>
-
-          {/* 운동 날짜 */}
-          <div>
+        <div className="bg-white rounded-lg shadow-sm p-6">
+          {/* 날짜 */}
+          <div className="mb-6">
             <label className="block text-sm font-medium text-gray-700 mb-2">
               운동 날짜
             </label>
             <input
               type="date"
-              value={workoutDate}
-              onChange={(e) => setWorkoutDate(e.target.value)}
+              value={workoutData.date}
+              onChange={(e) => handleDateChange(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
             />
           </div>
+
+          {/* 운동 제목 */}
+          <div className="mb-6">
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              운동 제목
+            </label>
+            <input
+              type="text"
+              value={workoutData.title}
+              onChange={(e) =>
+                setWorkoutData((prev) => ({ ...prev, title: e.target.value }))
+              }
+              placeholder="예: 가슴 운동, 하체 데이"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+            />
+          </div>
+
+          {/* 운동 시간 */}
+          <div className="grid grid-cols-2 gap-4 mb-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                시작 시간
+              </label>
+              <input
+                type="time"
+                value={workoutData.startTime}
+                onChange={(e) =>
+                  setWorkoutData((prev) => ({
+                    ...prev,
+                    startTime: e.target.value,
+                  }))
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                종료 시간
+              </label>
+              <input
+                type="time"
+                value={workoutData.endTime}
+                onChange={(e) =>
+                  setWorkoutData((prev) => ({
+                    ...prev,
+                    endTime: e.target.value,
+                  }))
+                }
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
+              />
+            </div>
+          </div>
+
+          {/* 운동 시간 표시 */}
+          {workoutData.startTime && workoutData.endTime && (
+            <div className="bg-gray-50 p-3 rounded-md mb-6">
+              <span className="text-sm text-gray-600">
+                총 운동 시간:{" "}
+                <span className="font-medium text-gray-800">
+                  {calculateDuration(
+                    workoutData.startTime,
+                    workoutData.endTime
+                  )}
+                  분
+                </span>
+              </span>
+            </div>
+          )}
 
           {/* 운동 종목들 */}
           <div>
@@ -356,13 +549,13 @@ export const WorkoutForm = ({ isOpen, onClose }: WorkoutFormProps) => {
               </Button>
             </div>
 
-            {exercises.length === 0 ? (
+            {workoutData.exercises.length === 0 ? (
               <div className="text-center py-8 text-gray-500">
                 <p>운동 종목을 추가해보세요</p>
               </div>
             ) : (
               <div className="space-y-6">
-                {exercises.map((exercise) => (
+                {workoutData.exercises.map((exercise) => (
                   <div key={exercise.id} className="border rounded-lg p-4">
                     {/* 운동 이름, 카테고리, 단위 */}
                     <div className="space-y-2 mb-4">
@@ -371,7 +564,7 @@ export const WorkoutForm = ({ isOpen, onClose }: WorkoutFormProps) => {
                           type="text"
                           value={exercise.name}
                           onChange={(e) =>
-                            updateExerciseName(exercise.id, e.target.value)
+                            updateExercise(exercise.id, "name", e.target.value)
                           }
                           placeholder="운동 이름 (예: 벤치프레스)"
                           className="col-span-11 px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
@@ -389,7 +582,11 @@ export const WorkoutForm = ({ isOpen, onClose }: WorkoutFormProps) => {
                         <select
                           value={exercise.category}
                           onChange={(e) =>
-                            updateExerciseCategory(exercise.id, e.target.value)
+                            updateExercise(
+                              exercise.id,
+                              "category",
+                              e.target.value
+                            )
                           }
                           className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                         >
@@ -402,7 +599,7 @@ export const WorkoutForm = ({ isOpen, onClose }: WorkoutFormProps) => {
                         <select
                           value={exercise.unit}
                           onChange={(e) =>
-                            updateExerciseUnit(exercise.id, e.target.value)
+                            updateExercise(exercise.id, "unit", e.target.value)
                           }
                           className="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-black"
                         >
@@ -564,21 +761,7 @@ export const WorkoutForm = ({ isOpen, onClose }: WorkoutFormProps) => {
             )}
           </div>
         </div>
-
-        {/* Footer */}
-        <div className="flex justify-end gap-3 p-6 border-t">
-          <Button variant="ghost" onClick={onClose}>
-            취소
-          </Button>
-          <Button
-            onClick={handleSubmit}
-            className="bg-black text-white hover:bg-gray-800"
-            disabled={!workoutTitle || exercises.length === 0}
-          >
-            운동 기록 저장
-          </Button>
-        </div>
       </div>
     </div>
   );
-};
+}
