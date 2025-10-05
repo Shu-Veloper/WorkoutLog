@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import dynamic from "next/dynamic";
-import { WorkoutForm } from "./WorkoutForm";
 
 const CalendarContorll = dynamic(
   () =>
@@ -15,7 +14,6 @@ const CalendarContorll = dynamic(
 );
 
 export const DashboardContent = () => {
-  const [isWorkoutFormOpen, setIsWorkoutFormOpen] = useState(false);
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -71,18 +69,13 @@ export const DashboardContent = () => {
           <h3 className="text-xl font-semibold text-gray-900 mb-4">빠른 실행</h3>
 
           <div className="space-y-3">
-            <button
-              onClick={() => setIsWorkoutFormOpen(true)}
+            <a
+              href="/record"
               className="w-full bg-black text-white py-3 px-4 rounded-lg hover:bg-gray-800 transition-colors font-medium text-left flex items-center"
             >
               <span className="text-xl mr-3">⚡</span>
               새 운동 기록하기
-            </button>
-
-            <button className="w-full bg-gray-100 text-gray-900 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium text-left flex items-center">
-              <span className="text-xl mr-3">📋</span>
-              이전 운동 복사하기
-            </button>
+            </a>
 
             <button className="w-full bg-gray-100 text-gray-900 py-3 px-4 rounded-lg hover:bg-gray-200 transition-colors font-medium text-left flex items-center">
               <span className="text-xl mr-3">📊</span>
@@ -137,11 +130,6 @@ export const DashboardContent = () => {
         </div>
       </div>
 
-      {/* Workout Form Modal */}
-      <WorkoutForm
-        isOpen={isWorkoutFormOpen}
-        onClose={() => setIsWorkoutFormOpen(false)}
-      />
     </div>
   );
 };
