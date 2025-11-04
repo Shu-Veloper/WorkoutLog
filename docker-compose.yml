@@ -1,0 +1,13 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app # 로컬 폴더와 동기화
+      - /app/node_modules # node_modules는 제외
+    environment:
+      - NODE_ENV=development
+    command: npm run dev # ← 개발 서버 실행
