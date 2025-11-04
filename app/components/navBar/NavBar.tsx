@@ -1,15 +1,21 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Menu, User, X, ChevronDown, LogIn } from "lucide-react";
+import { User, LogIn, LogOut, Settings } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabase";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
-export const NavBar = () => {
+interface NavBarProps {
+  isRecordPage: boolean;
+  onViewChange: (isRecord: boolean) => void;
+}
+
+export const NavBar = ({ isRecordPage, onViewChange }: NavBarProps) => {
+  const [mounted, setMounted] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
-  const [loading, setLoading] = useState(true);
   const menuRef = useRef<HTMLDivElement>(null);
 
   const toggleProfileMenu = () => {
@@ -19,17 +25,20 @@ export const NavBar = () => {
   // 인증 상태 확인
   useEffect(() => {
     const getUser = async () => {
-      const { data: { user }, error } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       setUser(user);
-      setLoading(false);
+      setMounted(true);
     };
 
     getUser();
 
     // 인증 상태 변경 감지
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
-      setLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -56,91 +65,131 @@ export const NavBar = () => {
   };
 
   const handleSignIn = () => {
-    setIsProfileMenuOpen(false);
     window.location.href = "/auth/login";
   };
 
+  // 마운트 전 렌더링 (hydration 방지)
+  if (!mounted) {
+    return (
+      <nav className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex h-16 items-center justify-between">
+            <div className="flex items-center">
+              <div className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white">
+                <span>WL</span>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 md:gap-3 bg-gray-100 dark:bg-gray-700 px-3 md:px-6 py-2 md:py-3 rounded-full">
+              <span className="text-xs md:text-sm font-semibold text-gray-500">
+                달력
+              </span>
+              <Switch checked={false} onCheckedChange={() => {}} disabled />
+              <span className="text-xs md:text-sm font-semibold text-gray-500">
+                기록
+              </span>
+            </div>
+            <div className="w-20"></div>
+          </div>
+        </div>
+      </nav>
+    );
+  }
+
   return (
-    <nav className="bg-black text-white w-full">
-      {/* Main navbar */}
+    <nav className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Center - Logo */}
-          <div className="flex-1 flex justify-center md:justify-start md:ml-6">
+        <div className="flex h-16 items-center justify-between">
+          {/* Left - Logo */}
+          <div className="flex items-center">
             <button
-              className="text-xl font-bold text-white hover:text-gray-300 transition-colors"
+              className="text-xl md:text-2xl font-bold text-gray-900 dark:text-white hover:text-blue-600 dark:hover:text-blue-400 transition-colors"
               onClick={() => (window.location.href = "/")}
             >
-              Workout Log
+              {/* 모바일: WL, 데스크톱: WorkoutLog */}
+              <span className="block md:hidden">WL</span>
+              <span className="hidden md:block">WorkoutLog</span>
             </button>
           </div>
 
-          {/* Right side - Profile icon with dropdown */}
-          <div className="relative" ref={menuRef}>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={toggleProfileMenu}
-              className="text-white hover:bg-gray-800"
-              aria-label="Profile menu"
+          {/* Center - View Toggle Switch */}
+          {/* <div className="flex items-center gap-2 md:gap-3 bg-gray-100 dark:bg-gray-700 px-3 md:px-6 py-2 md:py-3 rounded-full">
+            <span
+              className={`text-xs md:text-sm font-semibold transition-colors ${
+                !isRecordPage
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-gray-500 dark:text-gray-400"
+              }`}
             >
-              <User className="h-6 w-6" />
-            </Button>
+              달력
+            </span>
+            <Switch
+              checked={isRecordPage}
+              onCheckedChange={onViewChange}
+            />
+            <span
+              className={`text-xs md:text-sm font-semibold transition-colors ${
+                isRecordPage
+                  ? "text-blue-600 dark:text-blue-400"
+                  : "text-gray-500 dark:text-gray-400"
+              }`}
+            >
+              기록
+            </span>
+          </div> */}
 
-            {/* Profile dropdown menu */}
-            {isProfileMenuOpen && (
-              <div className="absolute right-0 mt-2 min-w-48 max-w-80 bg-gray-900 rounded-md shadow-lg py-1 z-50">
-                {user ? (
-                  // 로그인된 사용자 메뉴
-                  <>
-                    <div className="px-4 py-2 text-sm text-gray-400 border-b border-gray-700 whitespace-nowrap">
-                      {user.email}
+          {/* Right - Login Button or User Menu */}
+          <div className="relative" ref={menuRef}>
+            {!user ? (
+              <Button
+                onClick={handleSignIn}
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 md:px-6 py-2 rounded-lg transition-colors text-xs md:text-sm"
+              >
+                <LogIn className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+                <span className="hidden sm:inline">로그인</span>
+              </Button>
+            ) : (
+              <>
+                <Button
+                  variant="ghost"
+                  onClick={toggleProfileMenu}
+                  className="flex items-center gap-1 md:gap-2 text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 px-2 md:px-4 py-2 rounded-lg"
+                  aria-label="Profile menu"
+                >
+                  <User className="h-4 w-4 md:h-5 md:w-5" />
+                  <span className="hidden sm:block text-sm font-medium max-w-[100px] md:max-w-[150px] truncate">
+                    {user.email?.split("@")[0]}
+                  </span>
+                </Button>
+
+                {/* Profile dropdown menu */}
+                {isProfileMenuOpen && (
+                  <div className="absolute right-0 mt-2 w-64 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+                    <div className="px-4 py-3 border-b border-gray-200 dark:border-gray-700">
+                      <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
+                        {user.email}
+                      </p>
                     </div>
-                    <a
-                      href="/workouts"
-                      className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                    >
-                      Workouts
-                    </a>
-                    <a
-                      href="/progress"
-                      className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                    >
-                      Progress
-                    </a>
-                    <a
-                      href="/settings"
-                      className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                    >
-                      Settings
-                    </a>
-                    <hr className="border-gray-700 my-1" />
-                    <button
-                      onClick={handleSignOut}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                    >
-                      로그아웃
-                    </button>
-                  </>
-                ) : (
-                  // 로그인되지 않은 사용자 메뉴
-                  <>
-                    <button
-                      onClick={handleSignIn}
-                      className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                    >
-                      <LogIn className="inline h-4 w-4 mr-2" />
-                      로그인
-                    </button>
-                    <a
-                      href="/auth/signup"
-                      className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors"
-                    >
-                      회원가입
-                    </a>
-                  </>
+
+                    <div className="py-2">
+                      <a
+                        href="/settings"
+                        className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
+                      >
+                        <Settings className="h-4 w-4" />
+                        <span>설정</span>
+                      </a>
+
+                      <button
+                        onClick={handleSignOut}
+                        className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                      >
+                        <LogOut className="h-4 w-4" />
+                        <span>로그아웃</span>
+                      </button>
+                    </div>
+                  </div>
                 )}
-              </div>
+              </>
             )}
           </div>
         </div>

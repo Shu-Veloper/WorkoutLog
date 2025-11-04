@@ -1,15 +1,17 @@
-"use client"
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-} from "lucide-react"
-import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker"
+} from "lucide-react";
+import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker";
 
-import { cn } from "@/lib/utils"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { cn } from "@/lib/utils";
+import { Button, buttonVariants } from "@/components/ui/button";
+import { useWorkout } from "@/contexts/WorkoutContext";
+import { bodyPartNames } from "@/data/mockWorkouts";
 
 function Calendar({
   className,
@@ -21,9 +23,9 @@ function Calendar({
   components,
   ...props
 }: React.ComponentProps<typeof DayPicker> & {
-  buttonVariant?: React.ComponentProps<typeof Button>["variant"]
+  buttonVariant?: React.ComponentProps<typeof Button>["variant"];
 }) {
-  const defaultClassNames = getDefaultClassNames()
+  const defaultClassNames = getDefaultClassNames();
 
   return (
     <DayPicker
@@ -133,13 +135,13 @@ function Calendar({
               className={cn(className)}
               {...props}
             />
-          )
+          );
         },
         Chevron: ({ className, orientation, ...props }) => {
           if (orientation === "left") {
             return (
               <ChevronLeftIcon className={cn("size-4", className)} {...props} />
-            )
+            );
           }
 
           if (orientation === "right") {
@@ -148,12 +150,12 @@ function Calendar({
                 className={cn("size-4", className)}
                 {...props}
               />
-            )
+            );
           }
 
           return (
             <ChevronDownIcon className={cn("size-4", className)} {...props} />
-          )
+          );
         },
         DayButton: CalendarDayButton,
         WeekNumber: ({ children, ...props }) => {
@@ -163,13 +165,13 @@ function Calendar({
                 {children}
               </div>
             </td>
-          )
+          );
         },
         ...components,
       }}
       {...props}
     />
-  )
+  );
 }
 
 function CalendarDayButton({
@@ -178,12 +180,36 @@ function CalendarDayButton({
   modifiers,
   ...props
 }: React.ComponentProps<typeof DayButton>) {
-  const defaultClassNames = getDefaultClassNames()
+  const { getWorkoutForDate } = useWorkout();
+  const dateStr = day.date.toISOString().split("T")[0];
+  const workout = getWorkoutForDate(dateStr);
 
-  const ref = React.useRef<HTMLButtonElement>(null)
+  // 해당 날짜의 운동 부위들 추출 (중복 제거)
+  const bodyParts = workout
+    ? [...new Set(workout.exercises.map(ex => bodyPartNames[ex.bodyPart]))]
+    : [];
+
+  const defaultClassNames = getDefaultClassNames();
+
+  const ref = React.useRef<HTMLButtonElement>(null);
   React.useEffect(() => {
-    if (modifiers.focused) ref.current?.focus()
-  }, [modifiers.focused])
+    if (modifiers.focused) ref.current?.focus();
+  }, [modifiers.focused]);
+
+  // 부위별 색상 매핑
+  const getBodyPartColor = (partName: string) => {
+    const colorMap: Record<string, string> = {
+      '등': 'bg-blue-500 text-white',
+      '어깨': 'bg-purple-500 text-white',
+      '가슴': 'bg-red-500 text-white',
+      '이두': 'bg-green-500 text-white',
+      '삼두': 'bg-yellow-500 text-white',
+      '다리': 'bg-orange-500 text-white',
+      '복근': 'bg-pink-500 text-white',
+      '유산소': 'bg-cyan-500 text-white',
+    };
+    return colorMap[partName] || 'bg-gray-500 text-white';
+  };
 
   return (
     <Button
@@ -206,8 +232,31 @@ function CalendarDayButton({
         className
       )}
       {...props}
-    />
-  )
+    >
+      <span className="text-sm sm:text-base font-medium">{day.date.getDate()}</span>
+
+      {bodyParts.length > 0 && (
+        <div className="flex flex-wrap gap-0.5 justify-center max-w-full px-0.5">
+          {bodyParts.slice(0, 2).map((part, idx) => (
+            <span
+              key={idx}
+              className={cn(
+                "text-[0.45rem] sm:text-[0.55rem] px-0.5 sm:px-1 py-0.5 rounded font-semibold whitespace-nowrap",
+                getBodyPartColor(part)
+              )}
+            >
+              {part}
+            </span>
+          ))}
+          {bodyParts.length > 2 && (
+            <span className="text-[0.45rem] sm:text-[0.55rem] px-0.5 sm:px-1 py-0.5 bg-gray-200 dark:bg-gray-600 rounded text-gray-700 dark:text-gray-300 font-semibold">
+              +{bodyParts.length - 2}
+            </span>
+          )}
+        </div>
+      )}
+    </Button>
+  );
 }
 
-export { Calendar, CalendarDayButton }
+export { Calendar, CalendarDayButton };
