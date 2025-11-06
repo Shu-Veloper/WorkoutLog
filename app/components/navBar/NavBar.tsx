@@ -1,10 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { User, LogIn, LogOut, Settings } from "lucide-react";
+import { User, LogIn, LogOut, Settings, Sun, Moon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabase";
+import { useTheme } from "@/contexts/ThemeContext";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface NavBarProps {
@@ -17,6 +18,7 @@ export const NavBar = ({ isRecordPage, onViewChange }: NavBarProps) => {
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const { theme, toggleTheme } = useTheme();
 
   const toggleProfileMenu = () => {
     setIsProfileMenuOpen(!isProfileMenuOpen);
@@ -88,7 +90,10 @@ export const NavBar = ({ isRecordPage, onViewChange }: NavBarProps) => {
                 기록
               </span>
             </div>
-            <div className="w-20"></div>
+            <div className="flex items-center gap-2">
+              <div className="w-10 h-10"></div>
+              <div className="w-20"></div>
+            </div>
           </div>
         </div>
       </nav>
@@ -137,17 +142,33 @@ export const NavBar = ({ isRecordPage, onViewChange }: NavBarProps) => {
             </span>
           </div> */}
 
-          {/* Right - Login Button or User Menu */}
-          <div className="relative" ref={menuRef}>
-            {!user ? (
-              <Button
-                onClick={handleSignIn}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 md:px-6 py-2 rounded-lg transition-colors text-xs md:text-sm"
-              >
-                <LogIn className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-                <span className="hidden sm:inline">로그인</span>
-              </Button>
-            ) : (
+          {/* Right - Theme Toggle & Login Button or User Menu */}
+          <div className="flex items-center gap-2">
+            {/* Theme Toggle Button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={toggleTheme}
+              className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+              aria-label="Toggle theme"
+            >
+              {theme === "light" ? (
+                <Moon className="h-5 w-5" />
+              ) : (
+                <Sun className="h-5 w-5" />
+              )}
+            </Button>
+
+            <div className="relative" ref={menuRef}>
+              {!user ? (
+                <Button
+                  onClick={handleSignIn}
+                  className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 md:px-6 py-2 rounded-lg transition-colors text-xs md:text-sm"
+                >
+                  <LogIn className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
+                  <span className="hidden sm:inline">로그인</span>
+                </Button>
+              ) : (
               <>
                 <Button
                   variant="ghost"
@@ -191,6 +212,7 @@ export const NavBar = ({ isRecordPage, onViewChange }: NavBarProps) => {
                 )}
               </>
             )}
+            </div>
           </div>
         </div>
       </div>
