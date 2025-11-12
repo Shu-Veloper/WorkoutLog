@@ -2,10 +2,12 @@
 
 import { useState } from "react";
 import { Target, TrendingUp, TrendingDown, Minus } from "lucide-react";
+import { useLocale } from "@/contexts/LocaleContext";
 
 type GoalType = "maintenance" | "bulk" | "cut";
 
 export const TargetCaloriesView = () => {
+  const { t } = useLocale();
   const [age, setAge] = useState<number>(25);
   const [gender, setGender] = useState<"male" | "female">("male");
   const [weight, setWeight] = useState<number>(70);
@@ -47,9 +49,9 @@ export const TargetCaloriesView = () => {
   };
 
   const goalOptions = [
-    { value: "maintenance" as GoalType, label: "체중 유지", icon: Minus, color: "bg-blue-500" },
-    { value: "bulk" as GoalType, label: "린매스업/벌크업", icon: TrendingUp, color: "bg-green-500" },
-    { value: "cut" as GoalType, label: "다이어트", icon: TrendingDown, color: "bg-red-500" },
+    { value: "maintenance" as GoalType, label: t("nutrition.maintenance"), icon: Minus, color: "bg-blue-500" },
+    { value: "bulk" as GoalType, label: t("nutrition.bulk"), icon: TrendingUp, color: "bg-green-500" },
+    { value: "cut" as GoalType, label: t("nutrition.cut"), icon: TrendingDown, color: "bg-red-500" },
   ];
 
   return (
@@ -59,11 +61,11 @@ export const TargetCaloriesView = () => {
         <div className="flex items-center gap-3 mb-2">
           <Target className="w-7 h-7 text-green-600 dark:text-green-400" />
           <h2 className="text-2xl font-bold text-gray-900 dark:text-white">
-            필요한 칼로리 계산기
+            {t("nutrition.targetCaloriesTitle")}
           </h2>
         </div>
         <p className="text-sm text-gray-600 dark:text-gray-400">
-          목표에 맞는 하루 필요 칼로리를 계산해보세요
+          {t("nutrition.targetCaloriesDesc")}
         </p>
       </div>
 
@@ -72,7 +74,7 @@ export const TargetCaloriesView = () => {
         {/* Gender Selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-            성별
+            {t("nutrition.gender")}
           </label>
           <div className="flex gap-3">
             <button
@@ -83,7 +85,7 @@ export const TargetCaloriesView = () => {
                   : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
               }`}
             >
-              남성
+              {t("nutrition.male")}
             </button>
             <button
               onClick={() => setGender("female")}
@@ -93,7 +95,7 @@ export const TargetCaloriesView = () => {
                   : "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300"
               }`}
             >
-              여성
+              {t("nutrition.female")}
             </button>
           </div>
         </div>
@@ -101,7 +103,7 @@ export const TargetCaloriesView = () => {
         {/* Age */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            나이 (세)
+            {t("nutrition.age")}
           </label>
           <input
             type="number"
@@ -117,7 +119,7 @@ export const TargetCaloriesView = () => {
         <div className="grid grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              체중 (kg)
+              {t("nutrition.weight")}
             </label>
             <input
               type="number"
@@ -130,7 +132,7 @@ export const TargetCaloriesView = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              키 (cm)
+              {t("nutrition.height")}
             </label>
             <input
               type="number"
@@ -146,25 +148,25 @@ export const TargetCaloriesView = () => {
         {/* Activity Level */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-            활동 수준
+            {t("nutrition.activityLevel")}
           </label>
           <select
             value={activityLevel}
             onChange={(e) => setActivityLevel(Number(e.target.value))}
             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white"
           >
-            <option value={1.2}>거의 활동 없음 (주 0-1회 운동)</option>
-            <option value={1.375}>가벼운 활동 (주 1-3회 운동)</option>
-            <option value={1.55}>보통 활동 (주 3-5회 운동)</option>
-            <option value={1.725}>활발한 활동 (주 6-7회 운동)</option>
-            <option value={1.9}>매우 활발한 활동 (하루 2회 운동)</option>
+            <option value={1.2}>{t("nutrition.activities.sedentary")}</option>
+            <option value={1.375}>{t("nutrition.activities.light")}</option>
+            <option value={1.55}>{t("nutrition.activities.moderate")}</option>
+            <option value={1.725}>{t("nutrition.activities.active")}</option>
+            <option value={1.9}>{t("nutrition.activities.veryActive")}</option>
           </select>
         </div>
 
         {/* Goal Selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
-            목표
+            {t("nutrition.goal")}
           </label>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             {goalOptions.map((option) => {
@@ -192,7 +194,7 @@ export const TargetCaloriesView = () => {
           onClick={handleCalculate}
           className="w-full bg-green-500 hover:bg-green-600 text-white font-bold py-4 rounded-lg transition-colors"
         >
-          계산하기
+          {t("nutrition.calculate")}
         </button>
 
         {/* Result */}
@@ -200,20 +202,20 @@ export const TargetCaloriesView = () => {
           <div className="mt-6 p-6 bg-gradient-to-br from-green-50 to-blue-50 dark:from-gray-700 dark:to-gray-600 rounded-lg border-2 border-green-200 dark:border-green-700">
             <div className="text-center space-y-3">
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                {goal === "maintenance" && "체중 유지를 위한"}
-                {goal === "bulk" && "린매스업/벌크업을 위한"}
-                {goal === "cut" && "다이어트를 위한"}
+                {goal === "maintenance" && t("nutrition.forMaintenance")}
+                {goal === "bulk" && t("nutrition.forBulk")}
+                {goal === "cut" && t("nutrition.forCut")}
               </p>
               <div className="text-5xl font-bold text-green-600 dark:text-green-400">
                 {calculatedCalories.toLocaleString()}
               </div>
               <p className="text-lg font-semibold text-gray-700 dark:text-gray-300">
-                kcal / 일
+                {t("nutrition.dailyCalories")}
               </p>
               <div className="pt-4 border-t border-green-200 dark:border-green-700 mt-4">
                 <p className="text-xs text-gray-600 dark:text-gray-400">
-                  기초대사량(BMR): {Math.round(calculateBMR()).toLocaleString()} kcal<br />
-                  총 에너지 소비량(TDEE): {Math.round(calculateTDEE()).toLocaleString()} kcal
+                  {t("nutrition.bmr")}: {Math.round(calculateBMR()).toLocaleString()} kcal<br />
+                  {t("nutrition.tdee")}: {Math.round(calculateTDEE()).toLocaleString()} kcal
                 </p>
               </div>
             </div>

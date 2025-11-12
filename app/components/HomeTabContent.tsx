@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { Switch } from "@/components/ui/switch";
 import { CalendarView } from "./CalendarView";
 import { RecordingView } from "./RecordingView";
+import { useLocale } from "@/contexts/LocaleContext";
 
 interface HomeTabContentProps {
   isRecordPage: boolean;
@@ -12,30 +13,27 @@ interface HomeTabContentProps {
 
 export const HomeTabContent = ({ isRecordPage, onRecordPageChange }: HomeTabContentProps) => {
   const [mounted, setMounted] = useState(false);
+  const { t, mounted: localeReady } = useLocale();
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  if (!mounted) {
+  if (!mounted || !localeReady) {
     return (
       <div className="space-y-8">
-        {/* Loading state - static switch */}
+        {/* Loading state - static placeholder */}
         <div className="flex justify-center">
           <div className="flex items-center gap-2 md:gap-3 bg-white dark:bg-gray-800 px-3 md:px-6 py-2 md:py-3 rounded-full shadow-md">
-            <span className="text-xs md:text-sm font-semibold text-gray-500">
-              달력
-            </span>
-            <Switch checked={false} onCheckedChange={() => {}} disabled />
-            <span className="text-xs md:text-sm font-semibold text-gray-500">
-              기록
-            </span>
+            <div className="w-12 h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            <div className="w-10 h-6 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+            <div className="w-12 h-4 bg-gray-200 dark:bg-gray-700 rounded"></div>
           </div>
         </div>
 
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           <div className="flex justify-center items-center h-64">
-            <div className="text-gray-500 dark:text-gray-400">로딩 중...</div>
+            <div className="text-gray-500 dark:text-gray-400">読み込み中...</div>
           </div>
         </div>
       </div>
@@ -44,7 +42,7 @@ export const HomeTabContent = ({ isRecordPage, onRecordPageChange }: HomeTabCont
 
   return (
     <div className="space-y-8">
-      {/* Home Tab: 달력/기록 전환 스위치 */}
+      {/* Home Tab: Switch */}
       <div className="flex justify-center">
         <div className="flex items-center gap-2 md:gap-3 bg-white dark:bg-gray-800 px-3 md:px-6 py-2 md:py-3 rounded-full shadow-md">
           <span
@@ -54,7 +52,7 @@ export const HomeTabContent = ({ isRecordPage, onRecordPageChange }: HomeTabCont
                 : "text-gray-500 dark:text-gray-400"
             }`}
           >
-            달력
+            {t("nav.calendar")}
           </span>
           <Switch
             checked={isRecordPage}
@@ -67,12 +65,11 @@ export const HomeTabContent = ({ isRecordPage, onRecordPageChange }: HomeTabCont
                 : "text-gray-500 dark:text-gray-400"
             }`}
           >
-            기록
+            {t("nav.record")}
           </span>
         </div>
       </div>
 
-      {/* 달력 또는 기록 페이지 */}
       {isRecordPage ? <RecordingView /> : <CalendarView />}
     </div>
   );

@@ -11,7 +11,8 @@ import { DayButton, DayPicker, getDefaultClassNames } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { useWorkout } from "@/contexts/WorkoutContext";
-import { bodyPartNames } from "@/data/mockWorkouts";
+import { useLocale } from "@/contexts/LocaleContext";
+import { BodyPart } from "@/types/workout";
 
 function Calendar({
   className,
@@ -181,12 +182,14 @@ function CalendarDayButton({
   ...props
 }: React.ComponentProps<typeof DayButton>) {
   const { getWorkoutForDate } = useWorkout();
+  const { t, mounted } = useLocale();
   const dateStr = day.date.toISOString().split("T")[0];
   const workout = getWorkoutForDate(dateStr);
 
-  // 해당 날짜의 운동 부위들 추출 (중복 제거)
-  const bodyParts = workout
-    ? [...new Set(workout.exercises.map(ex => bodyPartNames[ex.bodyPart]))]
+  // 해당 날짜의 운동 부위들 추출 (중복 제거) - 영어 키로 유지
+  // 마운트되기 전에는 빈 배열 반환하여 SSR과 일치시킴
+  const bodyParts = mounted && workout
+    ? [...new Set(workout.exercises.map(ex => ex.bodyPart))]
     : [];
 
   const defaultClassNames = getDefaultClassNames();
@@ -196,19 +199,19 @@ function CalendarDayButton({
     if (modifiers.focused) ref.current?.focus();
   }, [modifiers.focused]);
 
-  // 부위별 색상 매핑
-  const getBodyPartColor = (partName: string) => {
-    const colorMap: Record<string, string> = {
-      '등': 'bg-blue-500 text-white',
-      '어깨': 'bg-purple-500 text-white',
-      '가슴': 'bg-red-500 text-white',
-      '이두': 'bg-green-500 text-white',
-      '삼두': 'bg-yellow-500 text-white',
-      '다리': 'bg-orange-500 text-white',
-      '복근': 'bg-pink-500 text-white',
-      '유산소': 'bg-cyan-500 text-white',
+  // 부위별 색상 매핑 (영어 키 기반)
+  const getBodyPartColor = (bodyPart: BodyPart) => {
+    const colorMap: Record<BodyPart, string> = {
+      back: 'bg-blue-500 text-white',
+      shoulder: 'bg-purple-500 text-white',
+      chest: 'bg-red-500 text-white',
+      biceps: 'bg-green-500 text-white',
+      triceps: 'bg-yellow-500 text-white',
+      legs: 'bg-orange-500 text-white',
+      abs: 'bg-pink-500 text-white',
+      cardio: 'bg-cyan-500 text-white',
     };
-    return colorMap[partName] || 'bg-gray-500 text-white';
+    return colorMap[bodyPart] || 'bg-gray-500 text-white';
   };
 
   return (
@@ -245,7 +248,7 @@ function CalendarDayButton({
                 getBodyPartColor(part)
               )}
             >
-              {part}
+              {t(`bodyParts.${part}`)}
             </span>
           ))}
           {bodyParts.length > 2 && (

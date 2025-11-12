@@ -1,6 +1,7 @@
 "use client";
 
 import { Home, Utensils, Clock } from "lucide-react";
+import { useLocale } from "@/contexts/LocaleContext";
 
 export type TabType = "home" | "nutrition" | "coming-soon";
 
@@ -10,20 +11,22 @@ interface FooterTabProps {
 }
 
 export const FooterTab = ({ activeTab, onTabChange }: FooterTabProps) => {
+  const { t } = useLocale();
+
   const tabs = [
     {
       id: "home" as TabType,
-      label: "홈",
+      label: t("footer.home"),
       icon: Home,
     },
     {
       id: "nutrition" as TabType,
-      label: "식단",
+      label: t("footer.nutrition"),
       icon: Utensils,
     },
     {
       id: "coming-soon" as TabType,
-      label: "준비중",
+      label: t("footer.comingSoon"),
       icon: Clock,
     },
   ];

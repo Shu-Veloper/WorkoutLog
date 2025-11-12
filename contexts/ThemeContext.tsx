@@ -7,6 +7,7 @@ type Theme = "light" | "dark";
 interface ThemeContextType {
   theme: Theme;
   toggleTheme: () => void;
+  mounted: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -49,13 +50,9 @@ export function ThemeProvider({ children }: { children: ReactNode }) {
     setTheme((prev) => (prev === "light" ? "dark" : "light"));
   };
 
-  // 마운트 전에는 children만 렌더링 (hydration 에러 방지)
-  if (!mounted) {
-    return <>{children}</>;
-  }
-
+  // 항상 Provider를 렌더링하되, mounted 상태를 Context에 포함
   return (
-    <ThemeContext.Provider value={{ theme, toggleTheme }}>
+    <ThemeContext.Provider value={{ theme, toggleTheme, mounted }}>
       {children}
     </ThemeContext.Provider>
   );
@@ -68,6 +65,7 @@ export function useTheme() {
     return {
       theme: "light" as Theme,
       toggleTheme: () => {},
+      mounted: false,
     };
   }
   return context;
