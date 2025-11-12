@@ -1,0 +1,118 @@
+{
+  "nav": {
+    "logo": "WorkoutLog",
+    "logoShort": "WL",
+    "calendar": "달력",
+    "record": "기록",
+    "login": "로그인",
+    "logout": "로그아웃",
+    "settings": "설정"
+  },
+  "footer": {
+    "home": "홈",
+    "nutrition": "식단",
+    "comingSoon": "준비중"
+  },
+  "home": {
+    "workoutCalendar": "운동 달력",
+    "workoutRecord": "운동 기록",
+    "loading": "로딩 중..."
+  },
+  "recording": {
+    "title": "운동 기록",
+    "restTimer": "휴식 타이머",
+    "selectDate": "날짜 선택",
+    "addExercise": "운동 추가",
+    "step1": "Step 1: 운동 부위 선택",
+    "step2": "Step 2: 운동 종목 선택",
+    "step3": "Step 3: 세트 정보 입력",
+    "selectBodyPart": "운동 부위를 선택하세요",
+    "selectExercise": "운동을 선택하세요",
+    "set": "세트",
+    "weight": "중량(kg)",
+    "reps": "횟수",
+    "distance": "거리(km)",
+    "time": "시간(분)",
+    "addSet": "세트 추가",
+    "saveExercise": "운동 저장",
+    "todayWorkouts": "오늘 기록한 운동",
+    "setsCompleted": "세트 완료",
+    "completeWorkout": "운동 완료!",
+    "alert": {
+      "fillAll": "운동 부위, 종목, 세트를 모두 입력해주세요.",
+      "saved": "개의 운동이 저장되었습니다!"
+    }
+  },
+  "nutrition": {
+    "targetCalories": "필요한 칼로리",
+    "calorieCalculator": "칼로리 계산기",
+    "targetCaloriesTitle": "필요한 칼로리 계산기",
+    "targetCaloriesDesc": "목표에 맞는 하루 필요 칼로리를 계산해보세요",
+    "foodCaloriesTitle": "칼로리 계산기",
+    "foodCaloriesDesc": "섭취한 음식의 칼로리와 영양소를 계산해보세요",
+    "gender": "성별",
+    "male": "남성",
+    "female": "여성",
+    "age": "나이 (세)",
+    "weight": "체중 (kg)",
+    "height": "키 (cm)",
+    "activityLevel": "활동 수준",
+    "goal": "목표",
+    "maintenance": "체중 유지",
+    "bulk": "린매스업/벌크업",
+    "cut": "다이어트",
+    "calculate": "계산하기",
+    "bmr": "기초대사량(BMR)",
+    "tdee": "총 에너지 소비량(TDEE)",
+    "dailyCalories": "kcal / 일",
+    "forMaintenance": "체중 유지를 위한",
+    "forBulk": "린매스업/벌크업을 위한",
+    "forCut": "다이어트를 위한",
+    "addFood": "음식 추가",
+    "foodName": "음식 이름",
+    "foodNamePlaceholder": "예: 닭가슴살, 현미밥",
+    "amount": "중량 (g)",
+    "calories": "칼로리 (kcal)",
+    "carbs": "탄수화물 (g)",
+    "protein": "단백질 (g)",
+    "fat": "지방 (g)",
+    "addButton": "추가하기",
+    "todayFood": "오늘 섭취한 음식",
+    "totalNutrition": "총 영양 정보",
+    "totalCalories": "총 칼로리",
+    "emptyFood": "섭취한 음식을 추가해보세요",
+    "alert": {
+      "fillRequired": "음식 이름과 칼로리를 입력해주세요."
+    },
+    "activities": {
+      "sedentary": "거의 활동 없음 (주 0-1회 운동)",
+      "light": "가벼운 활동 (주 1-3회 운동)",
+      "moderate": "보통 활동 (주 3-5회 운동)",
+      "active": "활발한 활동 (주 6-7회 운동)",
+      "veryActive": "매우 활발한 활동 (하루 2회 운동)"
+    }
+  },
+  "comingSoon": {
+    "title": "준비 중",
+    "subtitle": "새로운 기능들을 준비하고 있습니다.",
+    "description": "더 나은 사용자 경험을 위해",
+    "description2": "다양한 기능들을 개발하고 있습니다.",
+    "notification": "운동 알림",
+    "notificationDesc": "운동 시간을 알려주는 스마트 알림",
+    "statistics": "상세 통계",
+    "statisticsDesc": "운동 기록 분석 및 진척도 확인",
+    "aiRecommendation": "AI 추천",
+    "aiRecommendationDesc": "개인 맞춤형 운동 프로그램 추천",
+    "stayTuned": "새로운 소식은 곧 공지해드리겠습니다!"
+  },
+  "bodyParts": {
+    "back": "등",
+    "shoulder": "어깨",
+    "chest": "가슴",
+    "biceps": "이두",
+    "triceps": "삼두",
+    "legs": "다리",
+    "abs": "복근",
+    "cardio": "유산소"
+  }
+}

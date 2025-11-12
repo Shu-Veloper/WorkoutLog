@@ -1,27 +1,37 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { User, LogIn, LogOut, Settings, Sun, Moon } from "lucide-react";
+import { User, LogIn, LogOut, Settings, Sun, Moon, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
 import { supabase } from "@/lib/supabase";
 import { useTheme } from "@/contexts/ThemeContext";
+import { useLocale } from "@/contexts/LocaleContext";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
 interface NavBarProps {
-  isRecordPage: boolean;
-  onViewChange: (isRecord: boolean) => void;
+  isRecordPage?: boolean;
+  onViewChange?: (isRecord: boolean) => void;
 }
 
 export const NavBar = ({ isRecordPage, onViewChange }: NavBarProps) => {
+  // Suppress unused variable warnings - these props may be used in the future
+  void isRecordPage;
+  void onViewChange;
   const [mounted, setMounted] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
   const [user, setUser] = useState<SupabaseUser | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const langMenuRef = useRef<HTMLDivElement>(null);
   const { theme, toggleTheme } = useTheme();
+  const { locale, setLocale, t, mounted: localeReady } = useLocale();
 
   const toggleProfileMenu = () => {
     setIsProfileMenuOpen(!isProfileMenuOpen);
+  };
+
+  const toggleLangMenu = () => {
+    setIsLangMenuOpen(!isLangMenuOpen);
   };
 
   // 인증 상태 확인
@@ -52,6 +62,9 @@ export const NavBar = ({ isRecordPage, onViewChange }: NavBarProps) => {
       if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
         setIsProfileMenuOpen(false);
       }
+      if (langMenuRef.current && !langMenuRef.current.contains(event.target as Node)) {
+        setIsLangMenuOpen(false);
+      }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -71,7 +84,7 @@ export const NavBar = ({ isRecordPage, onViewChange }: NavBarProps) => {
   };
 
   // 마운트 전 렌더링 (hydration 방지)
-  if (!mounted) {
+  if (!mounted || !localeReady) {
     return (
       <nav className="sticky top-0 z-40 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -81,18 +94,10 @@ export const NavBar = ({ isRecordPage, onViewChange }: NavBarProps) => {
                 <span>WL</span>
               </div>
             </div>
-            <div className="flex items-center gap-2 md:gap-3 bg-gray-100 dark:bg-gray-700 px-3 md:px-6 py-2 md:py-3 rounded-full">
-              <span className="text-xs md:text-sm font-semibold text-gray-500">
-                달력
-              </span>
-              <Switch checked={false} onCheckedChange={() => {}} disabled />
-              <span className="text-xs md:text-sm font-semibold text-gray-500">
-                기록
-              </span>
-            </div>
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10"></div>
-              <div className="w-20"></div>
+              <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+              <div className="w-10 h-10 bg-gray-200 dark:bg-gray-700 rounded-full"></div>
+              <div className="w-20 h-10 bg-gray-200 dark:bg-gray-700 rounded-lg"></div>
             </div>
           </div>
         </div>
@@ -111,8 +116,8 @@ export const NavBar = ({ isRecordPage, onViewChange }: NavBarProps) => {
               onClick={() => (window.location.href = "/")}
             >
               {/* 모바일: WL, 데스크톱: WorkoutLog */}
-              <span className="block md:hidden">WL</span>
-              <span className="hidden md:block">WorkoutLog</span>
+              <span className="block md:hidden">{t("nav.logoShort")}</span>
+              <span className="hidden md:block">{t("nav.logo")}</span>
             </button>
           </div>
 
@@ -142,8 +147,66 @@ export const NavBar = ({ isRecordPage, onViewChange }: NavBarProps) => {
             </span>
           </div> */}
 
-          {/* Right - Theme Toggle & Login Button or User Menu */}
+          {/* Right - Language, Theme Toggle & Login Button or User Menu */}
           <div className="flex items-center gap-2">
+            {/* Language Toggle Button */}
+            <div className="relative" ref={langMenuRef}>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={toggleLangMenu}
+                className="text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg"
+                aria-label="Change language"
+              >
+                <Languages className="h-5 w-5" />
+              </Button>
+
+              {/* Language dropdown menu */}
+              {isLangMenuOpen && (
+                <div className="absolute right-0 mt-2 w-40 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 py-2 z-50">
+                  <button
+                    onClick={() => {
+                      setLocale("ja");
+                      setIsLangMenuOpen(false);
+                    }}
+                    className={`flex items-center w-full px-4 py-2 text-sm transition-colors ${
+                      locale === "ja"
+                        ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold"
+                        : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    日本語
+                  </button>
+                  <button
+                    onClick={() => {
+                      setLocale("en");
+                      setIsLangMenuOpen(false);
+                    }}
+                    className={`flex items-center w-full px-4 py-2 text-sm transition-colors ${
+                      locale === "en"
+                        ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold"
+                        : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    English
+                  </button>
+                  <button
+                    onClick={() => {
+                      setLocale("ko");
+                      setIsLangMenuOpen(false);
+                    }}
+                    className={`flex items-center w-full px-4 py-2 text-sm transition-colors ${
+                      locale === "ko"
+                        ? "bg-blue-50 dark:bg-blue-900/20 text-blue-600 dark:text-blue-400 font-semibold"
+                        : "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700"
+                    }`}
+                  >
+                    한국어
+                  </button>
+                </div>
+              )}
+            </div>
+
             {/* Theme Toggle Button */}
             <Button
               variant="ghost"
@@ -166,7 +229,7 @@ export const NavBar = ({ isRecordPage, onViewChange }: NavBarProps) => {
                   className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-3 md:px-6 py-2 rounded-lg transition-colors text-xs md:text-sm"
                 >
                   <LogIn className="h-3 w-3 md:h-4 md:w-4 md:mr-2" />
-                  <span className="hidden sm:inline">로그인</span>
+                  <span className="hidden sm:inline">{t("nav.login")}</span>
                 </Button>
               ) : (
               <>
@@ -197,7 +260,7 @@ export const NavBar = ({ isRecordPage, onViewChange }: NavBarProps) => {
                         className="flex items-center gap-3 px-4 py-2 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
                       >
                         <Settings className="h-4 w-4" />
-                        <span>설정</span>
+                        <span>{t("nav.settings")}</span>
                       </a>
 
                       <button
@@ -205,7 +268,7 @@ export const NavBar = ({ isRecordPage, onViewChange }: NavBarProps) => {
                         className="flex items-center gap-3 w-full px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
                       >
                         <LogOut className="h-4 w-4" />
-                        <span>로그아웃</span>
+                        <span>{t("nav.logout")}</span>
                       </button>
                     </div>
                   </div>

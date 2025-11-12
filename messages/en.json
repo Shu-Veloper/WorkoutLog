@@ -1,0 +1,118 @@
+{
+  "nav": {
+    "logo": "WorkoutLog",
+    "logoShort": "WL",
+    "calendar": "Calendar",
+    "record": "Record",
+    "login": "Login",
+    "logout": "Logout",
+    "settings": "Settings"
+  },
+  "footer": {
+    "home": "Home",
+    "nutrition": "Nutrition",
+    "comingSoon": "Coming Soon"
+  },
+  "home": {
+    "workoutCalendar": "Workout Calendar",
+    "workoutRecord": "Workout Record",
+    "loading": "Loading..."
+  },
+  "recording": {
+    "title": "Workout Record",
+    "restTimer": "Rest Timer",
+    "selectDate": "Select Date",
+    "addExercise": "Add Exercise",
+    "step1": "Step 1: Select Body Part",
+    "step2": "Step 2: Select Exercise",
+    "step3": "Step 3: Enter Set Information",
+    "selectBodyPart": "Select a body part",
+    "selectExercise": "Select an exercise",
+    "set": "Set",
+    "weight": "Weight(kg)",
+    "reps": "Reps",
+    "distance": "Distance(km)",
+    "time": "Time(min)",
+    "addSet": "Add Set",
+    "saveExercise": "Save Exercise",
+    "todayWorkouts": "Today's Workouts",
+    "setsCompleted": "sets completed",
+    "completeWorkout": "Complete Workout!",
+    "alert": {
+      "fillAll": "Please fill in body part, exercise, and sets.",
+      "saved": "workouts have been saved!"
+    }
+  },
+  "nutrition": {
+    "targetCalories": "Target Calories",
+    "calorieCalculator": "Calorie Calculator",
+    "targetCaloriesTitle": "Target Calories Calculator",
+    "targetCaloriesDesc": "Calculate your daily calorie needs based on your goals",
+    "foodCaloriesTitle": "Calorie Calculator",
+    "foodCaloriesDesc": "Calculate calories and nutrients from food you eat",
+    "gender": "Gender",
+    "male": "Male",
+    "female": "Female",
+    "age": "Age (years)",
+    "weight": "Weight (kg)",
+    "height": "Height (cm)",
+    "activityLevel": "Activity Level",
+    "goal": "Goal",
+    "maintenance": "Maintain Weight",
+    "bulk": "Lean Bulk",
+    "cut": "Cut/Diet",
+    "calculate": "Calculate",
+    "bmr": "Basal Metabolic Rate (BMR)",
+    "tdee": "Total Daily Energy Expenditure (TDEE)",
+    "dailyCalories": "kcal / day",
+    "forMaintenance": "For Weight Maintenance",
+    "forBulk": "For Lean Bulk",
+    "forCut": "For Cutting",
+    "addFood": "Add Food",
+    "foodName": "Food Name",
+    "foodNamePlaceholder": "e.g., Chicken breast, Brown rice",
+    "amount": "Amount (g)",
+    "calories": "Calories (kcal)",
+    "carbs": "Carbs (g)",
+    "protein": "Protein (g)",
+    "fat": "Fat (g)",
+    "addButton": "Add",
+    "todayFood": "Today's Food",
+    "totalNutrition": "Total Nutrition",
+    "totalCalories": "Total Calories",
+    "emptyFood": "Add food you've eaten today",
+    "alert": {
+      "fillRequired": "Please enter food name and calories."
+    },
+    "activities": {
+      "sedentary": "Sedentary (0-1 workouts/week)",
+      "light": "Lightly Active (1-3 workouts/week)",
+      "moderate": "Moderately Active (3-5 workouts/week)",
+      "active": "Very Active (6-7 workouts/week)",
+      "veryActive": "Extremely Active (2 workouts/day)"
+    }
+  },
+  "comingSoon": {
+    "title": "Coming Soon",
+    "subtitle": "We're preparing new features.",
+    "description": "For a better user experience,",
+    "description2": "we're developing various features.",
+    "notification": "Workout Notifications",
+    "notificationDesc": "Smart reminders for your workout time",
+    "statistics": "Detailed Statistics",
+    "statisticsDesc": "Analyze workout records and track progress",
+    "aiRecommendation": "AI Recommendations",
+    "aiRecommendationDesc": "Personalized workout program suggestions",
+    "stayTuned": "Stay tuned for updates!"
+  },
+  "bodyParts": {
+    "back": "Back",
+    "shoulder": "Shoulder",
+    "chest": "Chest",
+    "biceps": "Biceps",
+    "triceps": "Triceps",
+    "legs": "Legs",
+    "abs": "Abs",
+    "cardio": "Cardio"
+  }
+}

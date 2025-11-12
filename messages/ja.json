@@ -1,0 +1,118 @@
+{
+  "nav": {
+    "logo": "WorkoutLog",
+    "logoShort": "WL",
+    "calendar": "カレンダー",
+    "record": "記録",
+    "login": "ログイン",
+    "logout": "ログアウト",
+    "settings": "設定"
+  },
+  "footer": {
+    "home": "ホーム",
+    "nutrition": "食事",
+    "comingSoon": "準備中"
+  },
+  "home": {
+    "workoutCalendar": "トレーニングカレンダー",
+    "workoutRecord": "トレーニング記録",
+    "loading": "読み込み中..."
+  },
+  "recording": {
+    "title": "トレーニング記録",
+    "restTimer": "休憩タイマー",
+    "selectDate": "日付を選択",
+    "addExercise": "種目追加",
+    "step1": "Step 1: 部位を選択",
+    "step2": "Step 2: 種目を選択",
+    "step3": "Step 3: セット情報を入力",
+    "selectBodyPart": "部位を選択してください",
+    "selectExercise": "種目を選択してください",
+    "set": "セット",
+    "weight": "重量(kg)",
+    "reps": "回数",
+    "distance": "距離(km)",
+    "time": "時間(分)",
+    "addSet": "セット追加",
+    "saveExercise": "種目を保存",
+    "todayWorkouts": "今日の記録",
+    "setsCompleted": "セット完了",
+    "completeWorkout": "トレーニング完了！",
+    "alert": {
+      "fillAll": "部位、種目、セットをすべて入力してください。",
+      "saved": "件の種目が保存されました！"
+    }
+  },
+  "nutrition": {
+    "targetCalories": "必要カロリー",
+    "calorieCalculator": "カロリー計算",
+    "targetCaloriesTitle": "必要カロリー計算機",
+    "targetCaloriesDesc": "目標に合わせた1日の必要カロリーを計算します",
+    "foodCaloriesTitle": "カロリー計算機",
+    "foodCaloriesDesc": "摂取した食事のカロリーと栄養素を計算します",
+    "gender": "性別",
+    "male": "男性",
+    "female": "女性",
+    "age": "年齢 (歳)",
+    "weight": "体重 (kg)",
+    "height": "身長 (cm)",
+    "activityLevel": "活動レベル",
+    "goal": "目標",
+    "maintenance": "体重維持",
+    "bulk": "増量",
+    "cut": "減量",
+    "calculate": "計算する",
+    "bmr": "基礎代謝量(BMR)",
+    "tdee": "総消費カロリー(TDEE)",
+    "dailyCalories": "kcal / 日",
+    "forMaintenance": "体重維持のための",
+    "forBulk": "増量のための",
+    "forCut": "減量のための",
+    "addFood": "食事追加",
+    "foodName": "食事名",
+    "foodNamePlaceholder": "例: 鶏胸肉、玄米",
+    "amount": "量 (g)",
+    "calories": "カロリー (kcal)",
+    "carbs": "炭水化物 (g)",
+    "protein": "タンパク質 (g)",
+    "fat": "脂質 (g)",
+    "addButton": "追加",
+    "todayFood": "今日の食事",
+    "totalNutrition": "合計栄養情報",
+    "totalCalories": "合計カロリー",
+    "emptyFood": "食事を追加してください",
+    "alert": {
+      "fillRequired": "食事名とカロリーを入力してください。"
+    },
+    "activities": {
+      "sedentary": "ほとんど活動なし (週0-1回運動)",
+      "light": "軽い活動 (週1-3回運動)",
+      "moderate": "普通の活動 (週3-5回運動)",
+      "active": "活発な活動 (週6-7回運動)",
+      "veryActive": "非常に活発な活動 (1日2回運動)"
+    }
+  },
+  "comingSoon": {
+    "title": "準備中",
+    "subtitle": "新しい機能を準備しています。",
+    "description": "より良いユーザー体験のために",
+    "description2": "様々な機能を開発中です。",
+    "notification": "トレーニング通知",
+    "notificationDesc": "トレーニング時間を知らせるスマート通知",
+    "statistics": "詳細統計",
+    "statisticsDesc": "トレーニング記録の分析と進捗確認",
+    "aiRecommendation": "AI推薦",
+    "aiRecommendationDesc": "個人に合わせたトレーニングプログラム推薦",
+    "stayTuned": "お楽しみに！"
+  },
+  "bodyParts": {
+    "back": "背中",
+    "shoulder": "肩",
+    "chest": "胸",
+    "biceps": "上腕二頭筋",
+    "triceps": "上腕三頭筋",
+    "legs": "脚",
+    "abs": "腹筋",
+    "cardio": "有酸素"
+  }
+}
