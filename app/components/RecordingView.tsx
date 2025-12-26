@@ -7,7 +7,7 @@ import { Plus, Trash2, Save, Clock } from "lucide-react";
 import { useLocale } from "@/contexts/LocaleContext";
 
 export const RecordingView = () => {
-  const { t, mounted: localeReady } = useLocale();
+  const { t, locale, mounted: localeReady } = useLocale();
   const [mounted, setMounted] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedBodyPart, setSelectedBodyPart] = useState<BodyPart | "">("");
@@ -80,7 +80,12 @@ export const RecordingView = () => {
 
   const formatDate = (date: Date) => {
     if (!mounted) return '';
-    return date.toLocaleDateString('ko-KR', {
+    const localeMap = {
+      ja: 'ja-JP',
+      en: 'en-US',
+      ko: 'ko-KR'
+    };
+    return date.toLocaleDateString(localeMap[locale], {
       year: 'numeric',
       month: 'long',
       day: 'numeric',
