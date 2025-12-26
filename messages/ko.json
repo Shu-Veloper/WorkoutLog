@@ -114,5 +114,73 @@
     "legs": "다리",
     "abs": "복근",
     "cardio": "유산소"
+  },
+  "statistics": {
+    "monthlyStats": "월별 통계",
+    "weeklyStats": "주별 통계",
+    "monthly": "월별",
+    "weekly": "주별",
+    "workoutDays": "운동 일수",
+    "days": "일",
+    "minutes": "분",
+    "bodyPartWorkouts": "부위별 운동 횟수",
+    "todayNutrition": "오늘의 영양 섭취",
+    "calories": "칼로리",
+    "protein": "단백질",
+    "carbs": "탄수화물",
+    "times": "회"
+  },
+  "auth": {
+    "login": {
+      "title": "로그인",
+      "subtitle": "계정이 없으신가요?",
+      "signupLink": "회원가입",
+      "emailLabel": "이메일 주소",
+      "emailPlaceholder": "example@email.com",
+      "passwordLabel": "비밀번호",
+      "passwordPlaceholder": "비밀번호를 입력해주세요",
+      "forgotPassword": "비밀번호를 잊으셨나요?",
+      "loginButton": "로그인",
+      "loggingIn": "로그인 중...",
+      "backToHome": "홈으로 돌아가기",
+      "errors": {
+        "fillAllFields": "이메일과 비밀번호를 입력해주세요.",
+        "invalidEmail": "올바른 이메일 형식을 입력해주세요.",
+        "invalidCredentials": "이메일 또는 비밀번호가 올바르지 않습니다.",
+        "emailNotConfirmed": "이메일 확인이 필요합니다. 이메일을 확인해주세요.",
+        "loginError": "로그인 중 오류가 발생했습니다.",
+        "resetPasswordEmail": "비밀번호 재설정을 위해 이메일을 입력해주세요.",
+        "resetPasswordFailed": "비밀번호 재설정 이메일 전송에 실패했습니다."
+      },
+      "resetPasswordSent": "비밀번호 재설정 이메일을 보냈습니다. 이메일을 확인해주세요."
+    },
+    "signup": {
+      "title": "계정 만들기",
+      "subtitle": "이미 계정이 있으신가요?",
+      "loginLink": "로그인",
+      "nameLabel": "이름 (선택사항)",
+      "namePlaceholder": "홍길동",
+      "emailLabel": "이메일 주소 *",
+      "emailPlaceholder": "example@email.com",
+      "passwordLabel": "비밀번호 *",
+      "passwordPlaceholder": "최소 6자 이상",
+      "confirmPasswordLabel": "비밀번호 확인 *",
+      "confirmPasswordPlaceholder": "비밀번호를 다시 입력해주세요",
+      "signupButton": "회원가입",
+      "signingUp": "가입 중...",
+      "backToHome": "홈으로 돌아가기",
+      "successTitle": "회원가입 완료!",
+      "successMessage": "{email}로 확인 이메일을 보냈습니다.",
+      "successMessage2": "이메일을 확인하여 계정을 활성화해주세요.",
+      "goToLogin": "로그인하러 가기",
+      "errors": {
+        "fillAllFields": "모든 필드를 입력해주세요.",
+        "passwordTooShort": "비밀번호는 최소 6자 이상이어야 합니다.",
+        "passwordMismatch": "비밀번호가 일치하지 않습니다.",
+        "invalidEmail": "올바른 이메일 형식을 입력해주세요.",
+        "emailAlreadyRegistered": "이미 가입된 이메일입니다.",
+        "signupError": "회원가입 중 오류가 발생했습니다."
+      }
+    }
   }
 }

@@ -5,8 +5,10 @@ import { Eye, EyeOff, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/lib/supabase";
 import Link from "next/link";
+import { useLocale } from "@/contexts/LocaleContext";
 
 export default function LoginPage() {
+  const { t, mounted } = useLocale();
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -15,6 +17,27 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [resetEmailSent, setResetEmailSent] = useState(false);
+
+  // 클라이언트 마운트 전에는 스켈레톤 UI 표시
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
+        <div className="sm:mx-auto sm:w-full sm:max-w-md animate-pulse">
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-48 mx-auto"></div>
+          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-32 mx-auto mt-6"></div>
+        </div>
+        <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
+          <div className="bg-white dark:bg-gray-800 py-8 px-4 shadow sm:rounded-lg sm:px-10 animate-pulse">
+            <div className="space-y-6">
+              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+              <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -26,13 +49,13 @@ export default function LoginPage() {
 
   const validateForm = () => {
     if (!formData.email || !formData.password) {
-      setError("이메일과 비밀번호를 입력해주세요.");
+      setError(t("auth.login.errors.fillAllFields"));
       return false;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError("올바른 이메일 형식을 입력해주세요.");
+      setError(t("auth.login.errors.invalidEmail"));
       return false;
     }
 
@@ -55,9 +78,9 @@ export default function LoginPage() {
 
       if (error) {
         if (error.message.includes("Invalid login credentials")) {
-          setError("이메일 또는 비밀번호가 올바르지 않습니다.");
+          setError(t("auth.login.errors.invalidCredentials"));
         } else if (error.message.includes("Email not confirmed")) {
-          setError("이메일 확인이 필요합니다. 이메일을 확인해주세요.");
+          setError(t("auth.login.errors.emailNotConfirmed"));
         } else {
           setError(error.message);
         }
@@ -69,7 +92,7 @@ export default function LoginPage() {
       window.location.href = redirectedFrom || "/";
 
     } catch (err) {
-      setError("로그인 중 오류가 발생했습니다.");
+      setError(t("auth.login.errors.loginError"));
       console.error("Login error:", err);
     } finally {
       setLoading(false);
@@ -78,13 +101,13 @@ export default function LoginPage() {
 
   const handlePasswordReset = async () => {
     if (!formData.email) {
-      setError("비밀번호 재설정을 위해 이메일을 입력해주세요.");
+      setError(t("auth.login.errors.resetPasswordEmail"));
       return;
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(formData.email)) {
-      setError("올바른 이메일 형식을 입력해주세요.");
+      setError(t("auth.login.errors.invalidEmail"));
       return;
     }
 
@@ -94,13 +117,13 @@ export default function LoginPage() {
       });
 
       if (error) {
-        setError("비밀번호 재설정 이메일 전송에 실패했습니다.");
+        setError(t("auth.login.errors.resetPasswordFailed"));
       } else {
         setResetEmailSent(true);
         setError("");
       }
     } catch (err) {
-      setError("비밀번호 재설정 중 오류가 발생했습니다.");
+      setError(t("auth.login.errors.resetPasswordFailed"));
       console.error("Password reset error:", err);
     }
   };
@@ -111,12 +134,12 @@ export default function LoginPage() {
         <div className="text-center">
           <h1 className="text-3xl font-bold text-gray-900">Workout Log</h1>
           <h2 className="mt-6 text-2xl font-bold text-gray-900">
-            로그인
+            {t("auth.login.title")}
           </h2>
           <p className="mt-2 text-gray-600">
-            계정이 없으신가요?{" "}
+            {t("auth.login.subtitle")}{" "}
             <Link href="/auth/signup" className="text-black hover:underline">
-              회원가입
+              {t("auth.login.signupLink")}
             </Link>
           </p>
         </div>
@@ -133,13 +156,13 @@ export default function LoginPage() {
 
             {resetEmailSent && (
               <div className="bg-green-50 border border-green-200 text-green-600 px-4 py-3 rounded-md text-sm">
-                비밀번호 재설정 이메일을 보냈습니다. 이메일을 확인해주세요.
+                {t("auth.login.resetPasswordSent")}
               </div>
             )}
 
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700">
-                이메일 주소
+                {t("auth.login.emailLabel")}
               </label>
               <div className="mt-1 relative">
                 <input
@@ -150,7 +173,7 @@ export default function LoginPage() {
                   required
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="example@email.com"
+                  placeholder={t("auth.login.emailPlaceholder")}
                   className="appearance-none block w-full px-3 py-2 pl-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black"
                 />
                 <Mail className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
@@ -159,7 +182,7 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700">
-                비밀번호
+                {t("auth.login.passwordLabel")}
               </label>
               <div className="mt-1 relative">
                 <input
@@ -170,7 +193,7 @@ export default function LoginPage() {
                   required
                   value={formData.password}
                   onChange={handleChange}
-                  placeholder="비밀번호를 입력해주세요"
+                  placeholder={t("auth.login.passwordPlaceholder")}
                   className="appearance-none block w-full px-3 py-2 pl-10 pr-10 border border-gray-300 rounded-md placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black"
                 />
                 <Lock className="h-5 w-5 text-gray-400 absolute left-3 top-2.5" />
@@ -191,7 +214,7 @@ export default function LoginPage() {
                   onClick={handlePasswordReset}
                   className="text-black hover:underline"
                 >
-                  비밀번호를 잊으셨나요?
+                  {t("auth.login.forgotPassword")}
                 </button>
               </div>
             </div>
@@ -202,7 +225,7 @@ export default function LoginPage() {
                 disabled={loading}
                 className="w-full bg-black hover:bg-gray-800 disabled:bg-gray-400"
               >
-                {loading ? "로그인 중..." : "로그인"}
+                {loading ? t("auth.login.loggingIn") : t("auth.login.loginButton")}
               </Button>
             </div>
           </form>
@@ -210,7 +233,7 @@ export default function LoginPage() {
           <div className="mt-6">
             <div className="text-center">
               <Link href="/" className="text-gray-600 hover:text-black text-sm">
-                홈으로 돌아가기
+                {t("auth.login.backToHome")}
               </Link>
             </div>
           </div>

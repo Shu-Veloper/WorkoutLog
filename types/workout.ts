@@ -44,3 +44,10 @@ export interface WorkoutStats {
   topExercises: { name: string; count: number }[]; // 가장 많이 한 운동
   streak: number; // 연속 운동 일수
 }
+
+// 영양소 데이터 (추후 구현 예정)
+export interface NutritionData {
+  calories: { goal: number; current: number };
+  protein: { goal: number; current: number };
+  carbs: { goal: number; current: number };
+}

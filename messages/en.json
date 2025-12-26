@@ -114,5 +114,73 @@
     "legs": "Legs",
     "abs": "Abs",
     "cardio": "Cardio"
+  },
+  "statistics": {
+    "monthlyStats": "Monthly Statistics",
+    "weeklyStats": "Weekly Statistics",
+    "monthly": "Monthly",
+    "weekly": "Weekly",
+    "workoutDays": "Workout Days",
+    "days": "days",
+    "minutes": "min",
+    "bodyPartWorkouts": "Workouts by Body Part",
+    "todayNutrition": "Today's Nutrition",
+    "calories": "Calories",
+    "protein": "Protein",
+    "carbs": "Carbs",
+    "times": "times"
+  },
+  "auth": {
+    "login": {
+      "title": "Login",
+      "subtitle": "Don't have an account?",
+      "signupLink": "Sign up",
+      "emailLabel": "Email address",
+      "emailPlaceholder": "example@email.com",
+      "passwordLabel": "Password",
+      "passwordPlaceholder": "Enter your password",
+      "forgotPassword": "Forgot your password?",
+      "loginButton": "Login",
+      "loggingIn": "Logging in...",
+      "backToHome": "Back to home",
+      "errors": {
+        "fillAllFields": "Please enter your email and password.",
+        "invalidEmail": "Please enter a valid email address.",
+        "invalidCredentials": "The email or password is incorrect.",
+        "emailNotConfirmed": "Email confirmation required. Please check your email.",
+        "loginError": "An error occurred during login.",
+        "resetPasswordEmail": "Please enter your email to reset your password.",
+        "resetPasswordFailed": "Failed to send password reset email."
+      },
+      "resetPasswordSent": "Password reset email has been sent. Please check your email."
+    },
+    "signup": {
+      "title": "Create account",
+      "subtitle": "Already have an account?",
+      "loginLink": "Login",
+      "nameLabel": "Name (optional)",
+      "namePlaceholder": "John Doe",
+      "emailLabel": "Email address *",
+      "emailPlaceholder": "example@email.com",
+      "passwordLabel": "Password *",
+      "passwordPlaceholder": "At least 6 characters",
+      "confirmPasswordLabel": "Confirm password *",
+      "confirmPasswordPlaceholder": "Enter your password again",
+      "signupButton": "Sign up",
+      "signingUp": "Signing up...",
+      "backToHome": "Back to home",
+      "successTitle": "Sign up complete!",
+      "successMessage": "We've sent a confirmation email to {email}.",
+      "successMessage2": "Please check your email to activate your account.",
+      "goToLogin": "Go to login",
+      "errors": {
+        "fillAllFields": "Please fill in all fields.",
+        "passwordTooShort": "Password must be at least 6 characters.",
+        "passwordMismatch": "Passwords do not match.",
+        "invalidEmail": "Please enter a valid email address.",
+        "emailAlreadyRegistered": "This email is already registered.",
+        "signupError": "An error occurred during sign up."
+      }
+    }
   }
 }

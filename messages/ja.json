@@ -114,5 +114,73 @@
     "legs": "脚",
     "abs": "腹筋",
     "cardio": "有酸素"
+  },
+  "statistics": {
+    "monthlyStats": "月間統計",
+    "weeklyStats": "週間統計",
+    "monthly": "月間",
+    "weekly": "週間",
+    "workoutDays": "トレーニング日数",
+    "days": "日",
+    "minutes": "分",
+    "bodyPartWorkouts": "部位別トレーニング回数",
+    "todayNutrition": "今日の栄養摂取",
+    "calories": "カロリー",
+    "protein": "タンパク質",
+    "carbs": "炭水化物",
+    "times": "回"
+  },
+  "auth": {
+    "login": {
+      "title": "ログイン",
+      "subtitle": "アカウントをお持ちでない方",
+      "signupLink": "新規登録",
+      "emailLabel": "メールアドレス",
+      "emailPlaceholder": "example@email.com",
+      "passwordLabel": "パスワード",
+      "passwordPlaceholder": "パスワードを入力してください",
+      "forgotPassword": "パスワードをお忘れですか？",
+      "loginButton": "ログイン",
+      "loggingIn": "ログイン中...",
+      "backToHome": "ホームに戻る",
+      "errors": {
+        "fillAllFields": "メールアドレスとパスワードを入力してください。",
+        "invalidEmail": "正しいメールアドレス形式を入力してください。",
+        "invalidCredentials": "メールアドレスまたはパスワードが正しくありません。",
+        "emailNotConfirmed": "メール確認が必要です。メールを確認してください。",
+        "loginError": "ログイン中にエラーが発生しました。",
+        "resetPasswordEmail": "パスワード再設定のためメールアドレスを入力してください。",
+        "resetPasswordFailed": "パスワード再設定メールの送信に失敗しました。"
+      },
+      "resetPasswordSent": "パスワード再設定メールを送信しました。メールを確認してください。"
+    },
+    "signup": {
+      "title": "アカウント作成",
+      "subtitle": "既にアカウントをお持ちの方",
+      "loginLink": "ログイン",
+      "nameLabel": "名前 (任意)",
+      "namePlaceholder": "山田太郎",
+      "emailLabel": "メールアドレス *",
+      "emailPlaceholder": "example@email.com",
+      "passwordLabel": "パスワード *",
+      "passwordPlaceholder": "6文字以上",
+      "confirmPasswordLabel": "パスワード確認 *",
+      "confirmPasswordPlaceholder": "パスワードを再入力してください",
+      "signupButton": "新規登録",
+      "signingUp": "登録中...",
+      "backToHome": "ホームに戻る",
+      "successTitle": "登録完了！",
+      "successMessage": "{email}に確認メールを送信しました。",
+      "successMessage2": "メールを確認してアカウントを有効化してください。",
+      "goToLogin": "ログインページへ",
+      "errors": {
+        "fillAllFields": "すべてのフィールドを入力してください。",
+        "passwordTooShort": "パスワードは6文字以上である必要があります。",
+        "passwordMismatch": "パスワードが一致しません。",
+        "invalidEmail": "正しいメールアドレス形式を入力してください。",
+        "emailAlreadyRegistered": "既に登録されているメールアドレスです。",
+        "signupError": "登録中にエラーが発生しました。"
+      }
+    }
   }
 }
