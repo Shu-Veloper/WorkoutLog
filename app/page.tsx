@@ -4,7 +4,7 @@ import { useState } from "react";
 import { NavBar } from "./components/navBar/NavBar";
 import { HomeTabContent } from "./components/HomeTabContent";
 import { NutritionView } from "./components/NutritionView";
-import { ComingSoonView } from "./components/ComingSoonView";
+import { RecordingView } from "./components/RecordingView";
 import { FooterTab, TabType } from "./components/FooterTab";
 
 export default function Home() {
@@ -20,10 +20,10 @@ export default function Home() {
             onRecordPageChange={setIsRecordPage}
           />
         );
+      case "record":
+        return <RecordingView />;
       case "nutrition":
         return <NutritionView />;
-      case "coming-soon":
-        return <ComingSoonView />;
       default:
         return null;
     }

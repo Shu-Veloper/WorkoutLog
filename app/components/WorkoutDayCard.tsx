@@ -1,8 +1,8 @@
 "use client";
 
 import { WorkoutDay } from "@/types/workout";
-import { bodyPartNames } from "@/data/mockWorkouts";
 import { Clock, Dumbbell, X } from "lucide-react";
+import { useLocale } from "@/contexts/LocaleContext";
 
 interface WorkoutDayCardProps {
   workoutDay: WorkoutDay;
@@ -10,6 +10,23 @@ interface WorkoutDayCardProps {
 }
 
 export const WorkoutDayCard = ({ workoutDay, onClose }: WorkoutDayCardProps) => {
+  const { t, mounted } = useLocale();
+
+  if (!mounted) {
+    return (
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 dark:bg-gray-700 rounded w-1/3 mb-4"></div>
+          <div className="h-4 bg-gray-200 dark:bg-gray-700 rounded w-1/4 mb-6"></div>
+          <div className="space-y-4">
+            <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+            <div className="h-20 bg-gray-200 dark:bg-gray-700 rounded"></div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 max-w-2xl mx-auto">
       {/* 헤더 */}
@@ -48,10 +65,10 @@ export const WorkoutDayCard = ({ workoutDay, onClose }: WorkoutDayCardProps) => 
             <div className="flex items-center gap-3 mb-3">
               <Dumbbell className="w-5 h-5 text-blue-500" />
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                {exercise.exerciseName}
+                {t(`exercises.${exercise.exerciseName}`)}
               </h3>
               <span className="px-2 py-1 text-xs font-medium bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 rounded-full">
-                {bodyPartNames[exercise.bodyPart]}
+                {t(`bodyParts.${exercise.bodyPart}`)}
               </span>
             </div>
 

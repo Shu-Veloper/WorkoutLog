@@ -181,14 +181,14 @@ export const bodyPartNames: Record<BodyPart, string> = {
   cardio: '유산소',
 };
 
-// 부위별 운동 목록
+// 부위별 운동 목록 (영문 키 - 번역은 messages/exercises에서)
 export const exercisesByBodyPart: Record<BodyPart, string[]> = {
-  back: ['풀업', '랫풀다운', '바벨로우', '덤벨로우', '시티드 로우'],
-  shoulder: ['오버헤드 프레스', '사이드 레터럴 레이즈', '프론트 레이즈', '리어 델트 플라이'],
-  chest: ['벤치프레스', '인클라인 벤치프레스', '덤벨 플라이', '푸쉬업', '체스트 프레스'],
-  biceps: ['바벨 컬', '덤벨 컬', '해머 컬', '프리처 컬'],
-  triceps: ['트라이셉스 익스텐션', '클로즈그립 벤치프레스', '딥스', '케이블 푸쉬다운'],
-  legs: ['스쿼트', '레그 프레스', '런지', '레그 컬', '레그 익스텐션'],
-  abs: ['크런치', '플랭크', '레그레이즈', '러시안 트위스트'],
-  cardio: ['러닝', '사이클', '로잉', '버피', '점핑잭'],
+  back: ['pullUp', 'latPullDown', 'barbellRow', 'dumbbellRow', 'seatedRow'],
+  shoulder: ['overheadPress', 'sideLateralRaise', 'frontRaise', 'rearDeltFly'],
+  chest: ['benchPress', 'inclineBenchPress', 'dumbbellFly', 'pushUp', 'chestPress'],
+  biceps: ['barbellCurl', 'dumbbellCurl', 'hammerCurl', 'preacherCurl'],
+  triceps: ['tricepsExtension', 'closeGripBenchPress', 'dips', 'cablePushdown'],
+  legs: ['squat', 'legPress', 'lunge', 'legCurl', 'legExtension'],
+  abs: ['crunch', 'plank', 'legRaise', 'russianTwist'],
+  cardio: ['running', 'cycling', 'rowing', 'burpee', 'jumpingJack'],
 };
