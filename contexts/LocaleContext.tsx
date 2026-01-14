@@ -2,7 +2,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode } from "react";
 
-type Locale = "ja" | "en" | "ko";
+export type Locale = "ja" | "en" | "ko";
 
 interface LocaleContextType {
   locale: Locale;
@@ -13,8 +13,13 @@ interface LocaleContextType {
 
 const LocaleContext = createContext<LocaleContextType | undefined>(undefined);
 
-export function LocaleProvider({ children }: { children: ReactNode }) {
-  const [locale, setLocaleState] = useState<Locale>("ja");
+interface LocaleProviderProps {
+  children: ReactNode;
+  initialLocale?: Locale;
+}
+
+export function LocaleProvider({ children, initialLocale = "ja" }: LocaleProviderProps) {
+  const [locale, setLocaleState] = useState<Locale>(initialLocale);
   const [messages, setMessages] = useState<Record<string, unknown>>({});
   const [mounted, setMounted] = useState(false);
 
@@ -28,24 +33,25 @@ export function LocaleProvider({ children }: { children: ReactNode }) {
     }
   };
 
-  // 초기 로케일 로드
+  // 초기 로케일 로드 (마운트 시 1회만 실행)
   useEffect(() => {
+    // localStorage에 저장된 값이 있으면 우선 사용 (사용자가 직접 선택한 경우)
     const savedLocale = localStorage.getItem("locale") as Locale | null;
-    const initialLocale = savedLocale || "ja";
+    const targetLocale = savedLocale || initialLocale;
 
-    if (initialLocale !== locale) {
-      setLocaleState(initialLocale);
-    }
-
-    loadMessages(initialLocale).then(() => {
+    setLocaleState(targetLocale);
+    loadMessages(targetLocale).then(() => {
       setMounted(true);
     });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // 로케일 변경
+  // 로케일 변경 (localStorage + 쿠키 모두 업데이트)
   const setLocale = (newLocale: Locale) => {
     setLocaleState(newLocale);
     localStorage.setItem("locale", newLocale);
+    // 쿠키도 업데이트 (서버와 동기화)
+    document.cookie = `locale=${newLocale}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
     loadMessages(newLocale);
   };
 
