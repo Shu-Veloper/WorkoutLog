@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { BodyPart, ExerciseRecord, SetRecord } from "@/types/workout";
 import { bodyPartNames, exercisesByBodyPart } from "@/data/mockWorkouts";
-import { Plus, Trash2, Save, Clock } from "lucide-react";
+import { Plus, Trash2, Save } from "lucide-react";
 import { useLocale } from "@/contexts/LocaleContext";
 
 export const RecordingView = () => {
@@ -12,21 +12,44 @@ export const RecordingView = () => {
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(undefined);
   const [selectedBodyPart, setSelectedBodyPart] = useState<BodyPart | "">("");
   const [selectedExercise, setSelectedExercise] = useState("");
-  const [currentSets, setCurrentSets] = useState<Omit<SetRecord, 'id'>[]>([]);
+  const [currentSets, setCurrentSets] = useState<Omit<SetRecord, "id">[]>([]);
   const [savedExercises, setSavedExercises] = useState<ExerciseRecord[]>([]);
 
   // 타이머 상태
-  const [restTimer, setRestTimer] = useState(0);
+  const [restTimer, setRestTimer] = useState(90);
+  const [initialTime, setInitialTime] = useState(90);
   const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [isEditingTime, setIsEditingTime] = useState(false);
 
   useEffect(() => {
     setSelectedDate(new Date());
     setMounted(true);
   }, []);
 
+  // 타이머 카운트다운
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+
+    if (isTimerRunning && restTimer > 0) {
+      interval = setInterval(() => {
+        setRestTimer((prev) => {
+          if (prev <= 1) {
+            setIsTimerRunning(false);
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isTimerRunning, restTimer]);
+
   // 세트 추가
   const addSet = () => {
-    const newSet: Omit<SetRecord, 'id'> = {
+    const newSet: Omit<SetRecord, "id"> = {
       setOrder: currentSets.length + 1,
       weight: 0,
       reps: 0,
@@ -41,7 +64,11 @@ export const RecordingView = () => {
   };
 
   // 세트 정보 업데이트
-  const updateSet = (index: number, field: keyof SetRecord, value: number | boolean) => {
+  const updateSet = (
+    index: number,
+    field: keyof SetRecord,
+    value: number | boolean
+  ) => {
     const updated = [...currentSets];
     updated[index] = { ...updated[index], [field]: value };
     setCurrentSets(updated);
@@ -58,7 +85,7 @@ export const RecordingView = () => {
       id: `ex-${Date.now()}`,
       exerciseName: selectedExercise,
       bodyPart: selectedBodyPart as BodyPart,
-      type: selectedBodyPart === 'cardio' ? 'cardio' : 'weight',
+      type: selectedBodyPart === "cardio" ? "cardio" : "weight",
       sets: currentSets.map((set, idx) => ({
         ...set,
         id: `set-${Date.now()}-${idx}`,
@@ -79,22 +106,22 @@ export const RecordingView = () => {
   };
 
   const formatDate = (date: Date) => {
-    if (!mounted) return '';
+    if (!mounted) return "";
     const localeMap = {
-      ja: 'ja-JP',
-      en: 'en-US',
-      ko: 'ko-KR'
+      ja: "ja-JP",
+      en: "en-US",
+      ko: "ko-KR",
     };
     return date.toLocaleDateString(localeMap[locale], {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      weekday: 'short'
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      weekday: "short",
     });
   };
 
   const formatDateToString = (date: Date) => {
-    return date.toISOString().split('T')[0];
+    return date.toISOString().split("T")[0];
   };
 
   if (!mounted || !localeReady) {
@@ -102,7 +129,9 @@ export const RecordingView = () => {
       <div className="max-w-4xl mx-auto p-6 space-y-8">
         <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
           <div className="flex justify-center items-center h-64">
-            <div className="text-gray-500 dark:text-gray-400">読み込み中...</div>
+            <div className="text-gray-500 dark:text-gray-400">
+              読み込み中...
+            </div>
           </div>
         </div>
       </div>
@@ -110,62 +139,114 @@ export const RecordingView = () => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-8">
+    <div className="max-w-4xl mx-auto p-0 sm:p-6 space-y-4 sm:space-y-8">
       {/* 헤더 */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-6">
+      <div className="bg-white dark:bg-gray-800 sm:rounded-lg sm:shadow-md p-4 sm:p-6">
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mb-4 sm:mb-6 hidden sm:block">
           {t("recording.title")}
         </h1>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* 1. 휴식 타이머 */}
-          <div className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 rounded-lg p-6 border border-blue-200 dark:border-blue-700">
-            <div className="flex flex-col items-center gap-3">
-              <div className="text-sm font-semibold text-blue-700 dark:text-blue-300">{t("recording.restTimer")}</div>
-              <div className="text-5xl font-bold text-blue-600 dark:text-blue-400 tabular-nums">
-                {Math.floor(restTimer / 60)}:{(restTimer % 60).toString().padStart(2, '0')}
-              </div>
-              <button
-                onClick={() => {
-                  setRestTimer(90);
-                  setIsTimerRunning(!isTimerRunning);
-                }}
-                className="px-6 py-3 bg-blue-500 hover:bg-blue-600 text-white font-semibold rounded-lg transition-colors flex items-center gap-2"
-              >
-                <Clock className="w-5 h-5" />
-                Start 90s
-              </button>
+        {/* 휴식 타이머 */}
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-900/50 rounded-lg p-8 border border-gray-200 dark:border-gray-700">
+          <div className="flex flex-col items-center gap-6">
+            <div className="text-lg font-semibold text-gray-700 dark:text-gray-300">
+              {t("recording.restTimer")}
             </div>
-          </div>
 
-          {/* 2. 날짜 선택 */}
-          <div className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/20 rounded-lg p-6 border border-purple-200 dark:border-purple-700">
-            <div className="flex flex-col gap-3">
-              <label className="text-sm font-semibold text-purple-700 dark:text-purple-300">
-                {t("recording.selectDate")}
-              </label>
-              {mounted && selectedDate && (
-                <>
+            {/* 원형 타이머 */}
+            <div className="relative w-64 h-64">
+              <svg
+                className="w-full h-full transform -rotate-90"
+                viewBox="0 0 200 200"
+              >
+                {/* 배경 원 */}
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="90"
+                  fill="white"
+                  stroke="#e5e7eb"
+                  strokeWidth="2"
+                />
+
+                {/* 프로그레스 원 */}
+                <circle
+                  cx="100"
+                  cy="100"
+                  r="90"
+                  fill="none"
+                  stroke="#10b981"
+                  strokeWidth="12"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 90}`}
+                  strokeDashoffset={`${
+                    2 * Math.PI * 90 * (1 - restTimer / initialTime)
+                  }`}
+                  className="transition-all duration-300"
+                />
+              </svg>
+
+              {/* 중앙 시간 표시 */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                {isEditingTime ? (
                   <input
-                    type="date"
-                    value={formatDateToString(selectedDate)}
+                    type="number"
+                    value={restTimer}
                     onChange={(e) => {
-                      if (e.target.value) {
-                        setSelectedDate(new Date(e.target.value));
+                      const value = Math.max(0, parseInt(e.target.value) || 0);
+                      setRestTimer(value);
+                      setInitialTime(value);
+                    }}
+                    onBlur={() => setIsEditingTime(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") {
+                        setIsEditingTime(false);
                       }
                     }}
-                    className="w-full px-4 py-3 text-lg border border-purple-300 dark:border-purple-600 rounded-lg focus:ring-2 focus:ring-purple-500 dark:bg-purple-900/30 dark:text-white"
+                    autoFocus
+                    className="w-24 text-4xl font-bold text-center bg-transparent border-2 border-emerald-500 rounded-lg focus:outline-none focus:ring-2 focus:ring-emerald-400 text-emerald-600 dark:text-emerald-400"
                   />
-                  <div className="text-sm text-purple-700 dark:text-purple-300 font-medium text-center">
-                    {formatDate(selectedDate)}
-                  </div>
-                </>
-              )}
-              {(!mounted || !selectedDate) && (
-                <div className="w-full px-4 py-3 text-lg border border-purple-300 dark:border-purple-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 text-center">
-                  ...
-                </div>
-              )}
+                ) : (
+                  <button
+                    onClick={() => !isTimerRunning && setIsEditingTime(true)}
+                    disabled={isTimerRunning}
+                    className={`text-6xl font-bold tabular-nums ${
+                      isTimerRunning
+                        ? "text-emerald-600 dark:text-emerald-400 cursor-default"
+                        : "text-emerald-600 dark:text-emerald-400 hover:text-emerald-700 dark:hover:text-emerald-300 cursor-pointer"
+                    }`}
+                  >
+                    {restTimer}
+                    <span className="text-3xl ml-1">s</span>
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* 컨트롤 버튼 */}
+            <div className="flex flex-col sm:flex-row gap-3 w-full sm:w-auto">
+              <button
+                onClick={() => setIsTimerRunning(!isTimerRunning)}
+                disabled={restTimer === 0}
+                className={`px-10 py-4 sm:px-8 sm:py-3 font-semibold rounded-lg transition-colors text-base sm:text-sm ${
+                  isTimerRunning
+                    ? "bg-amber-500 hover:bg-amber-600 text-white"
+                    : "bg-emerald-500 hover:bg-emerald-600 text-white disabled:bg-gray-300 disabled:cursor-not-allowed"
+                }`}
+              >
+                {isTimerRunning
+                  ? t("recording.pause") || "일시정지"
+                  : t("recording.start") || "시작"}
+              </button>
+              <button
+                onClick={() => {
+                  setIsTimerRunning(false);
+                  setRestTimer(initialTime);
+                }}
+                className="px-10 py-4 sm:px-8 sm:py-3 bg-gray-500 hover:bg-gray-600 text-white font-semibold rounded-lg transition-colors text-base sm:text-sm"
+              >
+                {t("recording.reset") || "리셋"}
+              </button>
             </div>
           </div>
         </div>
@@ -176,6 +257,35 @@ export const RecordingView = () => {
         <h2 className="text-xl font-bold text-gray-900 dark:text-white">
           {t("recording.addExercise")}
         </h2>
+
+        {/* 날짜 선택 */}
+        <div className="bg-gradient-to-br from-gray-50 to-gray-100 dark:from-gray-800/50 dark:to-gray-900/50 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+          <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+            {t("recording.selectDate")}
+          </label>
+          {mounted && selectedDate && (
+            <>
+              <input
+                type="date"
+                value={formatDateToString(selectedDate)}
+                onChange={(e) => {
+                  if (e.target.value) {
+                    setSelectedDate(new Date(e.target.value));
+                  }
+                }}
+                className="w-full px-4 py-3 text-lg border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-gray-400 dark:bg-gray-800/50 dark:text-white"
+              />
+              <div className="text-sm text-gray-700 dark:text-gray-300 font-medium text-center mt-2">
+                {formatDate(selectedDate)}
+              </div>
+            </>
+          )}
+          {(!mounted || !selectedDate) && (
+            <div className="w-full px-4 py-3 text-lg border border-gray-300 dark:border-gray-600 rounded-lg bg-gray-100 dark:bg-gray-700 text-gray-400 dark:text-gray-500 text-center">
+              ...
+            </div>
+          )}
+        </div>
 
         {/* Step 1: 운동 부위 선택 */}
         <div>
@@ -192,7 +302,7 @@ export const RecordingView = () => {
             className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white transition-colors"
           >
             <option value="">{t("recording.selectBodyPart")}</option>
-            {Object.entries(bodyPartNames).map(([key, value]) => (
+            {Object.entries(bodyPartNames).map(([key]) => (
               <option key={key} value={key}>
                 {t(`bodyParts.${key}`)}
               </option>
@@ -218,11 +328,13 @@ export const RecordingView = () => {
               className="w-full px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 dark:bg-gray-700 dark:text-white transition-colors"
             >
               <option value="">{t("recording.selectExercise")}</option>
-              {exercisesByBodyPart[selectedBodyPart as BodyPart]?.map((exercise) => (
-                <option key={exercise} value={exercise}>
-                  {exercise}
-                </option>
-              ))}
+              {exercisesByBodyPart[selectedBodyPart as BodyPart]?.map(
+                (exercise) => (
+                  <option key={exercise} value={exercise}>
+                    {t(`exercises.${exercise}`)}
+                  </option>
+                )
+              )}
             </select>
           </div>
         )}
@@ -244,46 +356,62 @@ export const RecordingView = () => {
                   </span>
 
                   {/* 무산소 운동 입력 */}
-                  {selectedBodyPart !== 'cardio' && (
+                  {selectedBodyPart !== "cardio" && (
                     <>
                       <input
                         type="number"
                         placeholder={t("recording.weight")}
-                        value={set.weight || ''}
-                        onChange={(e) => updateSet(index, 'weight', Number(e.target.value))}
+                        value={set.weight || ""}
+                        onChange={(e) =>
+                          updateSet(index, "weight", Number(e.target.value))
+                        }
                         className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-white"
                       />
-                      <span className="text-gray-500 dark:text-gray-400">kg ×</span>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        kg ×
+                      </span>
                       <input
                         type="number"
                         placeholder={t("recording.reps")}
-                        value={set.reps || ''}
-                        onChange={(e) => updateSet(index, 'reps', Number(e.target.value))}
+                        value={set.reps || ""}
+                        onChange={(e) =>
+                          updateSet(index, "reps", Number(e.target.value))
+                        }
                         className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-white"
                       />
-                      <span className="text-gray-500 dark:text-gray-400">{t("recording.reps")}</span>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        {t("recording.reps")}
+                      </span>
                     </>
                   )}
 
                   {/* 유산소 운동 입력 */}
-                  {selectedBodyPart === 'cardio' && (
+                  {selectedBodyPart === "cardio" && (
                     <>
                       <input
                         type="number"
                         placeholder={t("recording.distance")}
-                        value={set.distance || ''}
-                        onChange={(e) => updateSet(index, 'distance', Number(e.target.value))}
+                        value={set.distance || ""}
+                        onChange={(e) =>
+                          updateSet(index, "distance", Number(e.target.value))
+                        }
                         className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-white"
                       />
-                      <span className="text-gray-500 dark:text-gray-400">km</span>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        km
+                      </span>
                       <input
                         type="number"
                         placeholder={t("recording.time")}
-                        value={set.timeMin || ''}
-                        onChange={(e) => updateSet(index, 'timeMin', Number(e.target.value))}
+                        value={set.timeMin || ""}
+                        onChange={(e) =>
+                          updateSet(index, "timeMin", Number(e.target.value))
+                        }
                         className="w-28 px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-blue-500 dark:bg-gray-600 dark:text-white"
                       />
-                      <span className="text-gray-500 dark:text-gray-400">{t("recording.time")}</span>
+                      <span className="text-gray-500 dark:text-gray-400">
+                        {t("recording.time")}
+                      </span>
                     </>
                   )}
 
@@ -337,10 +465,13 @@ export const RecordingView = () => {
 
           <div className="space-y-4">
             {savedExercises.map((exercise) => (
-              <div key={exercise.id} className="border-l-4 border-green-500 pl-4 py-2">
+              <div
+                key={exercise.id}
+                className="border-l-4 border-green-500 pl-4 py-2"
+              >
                 <div className="flex items-center gap-2 mb-2">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white">
-                    {exercise.exerciseName}
+                    {t(`exercises.${exercise.exerciseName}`)}
                   </h3>
                   <span className="px-2 py-1 text-xs bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200 rounded-full">
                     {t(`bodyParts.${exercise.bodyPart}`)}

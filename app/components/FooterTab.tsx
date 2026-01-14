@@ -1,9 +1,9 @@
 "use client";
 
-import { Home, Utensils, Clock } from "lucide-react";
+import { Home, Utensils, ClipboardList } from "lucide-react";
 import { useLocale } from "@/contexts/LocaleContext";
 
-export type TabType = "home" | "nutrition" | "coming-soon";
+export type TabType = "home" | "record" | "nutrition";
 
 interface FooterTabProps {
   activeTab: TabType;
@@ -11,7 +11,7 @@ interface FooterTabProps {
 }
 
 export const FooterTab = ({ activeTab, onTabChange }: FooterTabProps) => {
-  const { t } = useLocale();
+  const { t, mounted: localeReady } = useLocale();
 
   const tabs = [
     {
@@ -20,16 +20,47 @@ export const FooterTab = ({ activeTab, onTabChange }: FooterTabProps) => {
       icon: Home,
     },
     {
+      id: "record" as TabType,
+      label: t("footer.record"),
+      icon: ClipboardList,
+    },
+    {
       id: "nutrition" as TabType,
       label: t("footer.nutrition"),
       icon: Utensils,
     },
-    {
-      id: "coming-soon" as TabType,
-      label: t("footer.comingSoon"),
-      icon: Clock,
-    },
   ];
+
+  // 로딩 상태: 아이콘만 보여주고 라벨은 스켈레톤으로 표시
+  if (!localeReady) {
+    return (
+      <footer className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg">
+        <nav className="max-w-7xl mx-auto">
+          <div className="flex items-center justify-around">
+            {tabs.map((tab) => {
+              const Icon = tab.icon;
+              const isActive = activeTab === tab.id;
+
+              return (
+                <button
+                  key={tab.id}
+                  disabled
+                  className={`flex-1 flex flex-col items-center justify-center py-3 px-2 ${
+                    isActive
+                      ? "text-blue-600 dark:text-blue-400"
+                      : "text-gray-500 dark:text-gray-400"
+                  }`}
+                >
+                  <Icon className="w-6 h-6 mb-1 stroke-2" />
+                  <div className="w-8 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+                </button>
+              );
+            })}
+          </div>
+        </nav>
+      </footer>
+    );
+  }
 
   return (
     <footer className="fixed bottom-0 left-0 right-0 z-50 bg-white dark:bg-gray-800 border-t border-gray-200 dark:border-gray-700 shadow-lg">
