@@ -515,16 +515,91 @@ Row Level Security (RLS): 사용자는 자신의 데이터만 조회/수정 가�
 데이터 보호: 모든 기록은 user_id로 격리
 
 
-📋 9. 향후 확장 기능 (Optional)
+🌐 9. 다국어(i18n) 지원
+
+9.1 지원 언어
+| 언어 | 코드 | 기본값 |
+|------|------|--------|
+| 일본어 | ja | ✓ (기본) |
+| 한국어 | ko | |
+| 영어 | en | |
+
+9.2 언어 감지 방식 (우선순위)
+```
+1. localStorage (사용자가 직접 선택한 경우)
+2. 쿠키 (Edge에서 자동 감지한 값)
+3. 기본값 (ja)
+```
+
+9.3 자동 언어 감지 (Vercel Edge)
+```
+사용자 접속
+    ↓
+[Middleware - Edge Runtime]
+    ├─ Vercel geo.country로 국가 감지
+    │   └─ JP → ja, KR → ko, 그 외 → en
+    ├─ Fallback: Accept-Language 헤더 파싱
+    └─ 쿠키에 locale 저장
+    ↓
+[layout.tsx - 서버 컴포넌트]
+    ├─ cookies()로 locale 읽기
+    └─ LocaleProvider에 initialLocale 전달
+    ↓
+[LocaleProvider - 클라이언트]
+    └─ localStorage 우선, 없으면 initialLocale 사용
+```
+
+9.4 구현 파일 구조
+```
+├── middleware.ts              # Edge에서 국가 감지 + 쿠키 설정
+├── contexts/
+│   └── LocaleContext.tsx      # 클라이언트 상태 관리
+├── messages/
+│   ├── ja.json                # 일본어 번역
+│   ├── ko.json                # 한국어 번역
+│   └── en.json                # 영어 번역
+└── app/
+    └── layout.tsx             # 서버에서 쿠키 읽어 props 전달
+```
+
+9.5 번역 파일 구조 예시
+```json
+{
+  "nav": {
+    "calendar": "カレンダー",
+    "record": "記録"
+  },
+  "footer": {
+    "home": "ホーム",
+    "record": "記録",
+    "nutrition": "食事"
+  }
+}
+```
+
+9.6 사용 방법
+```tsx
+// 컴포넌트에서 번역 사용
+const { t, locale, setLocale } = useLocale();
+
+// 번역 텍스트 출력
+<span>{t("footer.home")}</span>
+
+// 언어 변경 (쿠키 + localStorage 동시 업데이트)
+setLocale("ko");
+```
+
+
+📋 10. 향후 확장 기능 (Optional)
 Phase 1 (현재)
 
 운동 기록 기본 CRUD
 식단 칼로리 계산 및 기록
 기본 음식 데이터베이스
+다국어 지원 (한국어, 영어, 일본어) ✅
 
 Phase 2 (다음)
 
-다국어 지원 (한국어, 영어, 일본어)
 AI 영양정보 인식 (음식 이미지)
 목표 진행도 시각화
 공유 기능 (SNS 공유)
@@ -537,7 +612,7 @@ Phase 3 (향후)
 신체 수치 추적 (체중 그래프 등)
 
 
-✅ 10. 개발 우선순위
+✅ 11. 개발 우선순위
 Phase 1 (필수) - Week 1-2
 
  사용자 인증 (회원가입/로그인)
@@ -564,12 +639,12 @@ Phase 3 (필수) - Week 4
 
 Phase 4 (선택) - Week 5+
 
- 다국어 지원
  음식 이미지 인식 (AI)
  고급 통계
  모바일 최적화
 
 
-📝 11. 변경 이력
-1.0　2025-01-30　초기 운동 기록 요건정의서 
+📝 12. 변경 이력
+1.0　2025-01-30　초기 운동 기록 요건정의서
 2.0　2025-01-31　Footer Tab 및 식단 기능 추가
+3.0　2025-01-14　다국어(i18n) 지원 추가 - Vercel Edge 기반 자동 언어 감지
