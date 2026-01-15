@@ -1,491 +1,420 @@
 -- ============================================
--- 운동기록 웹사이트 - Supabase 초기 설정 (부위별 버전)
+-- 운동기록 웹사이트 - Supabase DB 설계
+-- 버전: 2.0 (유저 입력 기반 운동 종목)
 -- ============================================
 
+-- ============================================
+-- 설계 원칙
+-- ============================================
+-- 1. 운동 카테고리: 고정값 (시스템 정의) - 등/가슴/다리/상체/하체/어깨/유산소
+-- 2. 운동 종목: 유저가 직접 입력 (자유 입력)
+-- 3. 향후 유사 이름 매칭 알고리즘 확장 가능한 구조
+-- 4. 세트 정보: 일반 운동 - 무게(선택)/횟수(필수), 유산소 - 거리(선택)/시간(필수)
+
+-- ============================================
+-- 유저 워크플로우
+-- ============================================
+-- Step 1: 날짜 선택
+--     ↓
+-- Step 2: 부위 선택 (10개 카테고리)
+--     ├─ 세분화: 등, 가슴, 어깨, 이두, 삼두, 다리, 복근
+--     ├─ 통합: 상체, 하체
+--     └─ 유산소
+--     ↓
+-- Step 3: 종목 입력 (자유 입력, 예: "벤치프레스", "풀업")
+--     ↓
+-- Step 4: 세트 정보 입력
+--     ├─ 일반 운동: 무게(선택), 횟수(필수)
+--     └─ 유산소: 거리(선택), 시간(필수)
+--     ↓
+-- Step 5: 저장 (한 종목씩 저장, 다음 종목은 Step 1부터)
+
+-- ============================================
 -- 1. Users 테이블
+-- ============================================
 CREATE TABLE users (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(100),
   email VARCHAR(255) UNIQUE NOT NULL,
-  password_hash VARCHAR(255),
-  language_preference VARCHAR(10) DEFAULT 'en',
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- 2. ExerciseType 테이블 (운동 종류 마스터)
-CREATE TABLE exercise_types (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  name VARCHAR(100) NOT NULL,
-  body_part VARCHAR(50) NOT NULL,
-  type VARCHAR(50) NOT NULL, -- 'weight', 'reps', 'time_speed'
-  description TEXT,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-
--- 3. ExerciseTypes 다국어 번역 테이블
-CREATE TABLE exercise_types_i18n (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  exercise_type_id UUID NOT NULL REFERENCES exercise_types(id) ON DELETE CASCADE,
-  language VARCHAR(10) NOT NULL, -- 'en', 'ko', 'zh', 'ja'
-  name VARCHAR(100) NOT NULL,
-  description TEXT,
+  name VARCHAR(100),
+  language VARCHAR(5) DEFAULT 'ja',  -- 기본값: 일본어 (ja, ko, en)
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-  UNIQUE(exercise_type_id, language)
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 4. BodyPart 다국어 테이블
-CREATE TABLE body_part_i18n (
+-- ============================================
+-- 2. Exercise Categories 테이블 (고정 카테고리)
+-- ============================================
+CREATE TABLE exercise_categories (
+  id VARCHAR(20) PRIMARY KEY,
+  name_ja VARCHAR(50) NOT NULL,
+  name_ko VARCHAR(50) NOT NULL,
+  name_en VARCHAR(50) NOT NULL,
+  is_cardio BOOLEAN DEFAULT FALSE,
+  sort_order INT DEFAULT 0
+);
+
+-- 초기 데이터 (10개 고정 카테고리)
+-- 세분화된 부위 + 통합 옵션 (상체/하체) 제공
+INSERT INTO exercise_categories (id, name_ja, name_ko, name_en, is_cardio, sort_order) VALUES
+  -- 세분화된 부위
+  ('back', '背中', '등', 'Back', FALSE, 1),
+  ('chest', '胸', '가슴', 'Chest', FALSE, 2),
+  ('shoulder', '肩', '어깨', 'Shoulder', FALSE, 3),
+  ('biceps', '二頭筋', '이두', 'Biceps', FALSE, 4),
+  ('triceps', '三頭筋', '삼두', 'Triceps', FALSE, 5),
+  ('legs', '脚', '다리', 'Legs', FALSE, 6),
+  ('core', '体幹', '복근', 'Core', FALSE, 7),
+  -- 통합 옵션 (구분하고 싶지 않은 사용자용)
+  ('upper_body', '上半身', '상체', 'Upper Body', FALSE, 8),
+  ('lower_body', '下半身', '하체', 'Lower Body', FALSE, 9),
+  -- 유산소
+  ('cardio', '有酸素', '유산소', 'Cardio', TRUE, 10);
+
+-- ============================================
+-- 3. User Exercises 테이블 (유저가 직접 입력한 운동 종목)
+-- ============================================
+CREATE TABLE user_exercises (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  body_part VARCHAR(50) NOT NULL,
-  language VARCHAR(10) NOT NULL,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  category_id VARCHAR(20) NOT NULL REFERENCES exercise_categories(id),
   name VARCHAR(100) NOT NULL,
-  UNIQUE(body_part, language)
+  normalized_name VARCHAR(100),  -- 정규화된 이름 (향후 유사 매칭용)
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  -- 같은 유저, 같은 카테고리에서 중복 방지
+  UNIQUE(user_id, category_id, name)
 );
 
--- 5. WorkoutDay 테이블 (그 날 운동)
-CREATE TABLE workout_days (
+-- 인덱스 (유사 이름 검색용)
+CREATE INDEX idx_user_exercises_user ON user_exercises(user_id);
+CREATE INDEX idx_user_exercises_category ON user_exercises(category_id);
+CREATE INDEX idx_user_exercises_normalized ON user_exercises(user_id, normalized_name);
+
+-- ============================================
+-- 4. Workout Sessions 테이블 (운동 날짜/세션)
+-- ============================================
+CREATE TABLE workout_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   date DATE NOT NULL,
-  note TEXT,
-  total_duration_min INTEGER,
+  notes TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  -- 같은 유저, 같은 날짜에 하나의 세션만
   UNIQUE(user_id, date)
 );
 
--- 6. ExerciseRecord 테이블 (그날 한 운동)
-CREATE TABLE exercise_records (
+-- 인덱스
+CREATE INDEX idx_workout_sessions_user ON workout_sessions(user_id);
+CREATE INDEX idx_workout_sessions_date ON workout_sessions(date);
+
+-- ============================================
+-- 5. Workout Records 테이블 (세션 내 운동 기록)
+-- ============================================
+CREATE TABLE workout_records (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  workout_day_id UUID NOT NULL REFERENCES workout_days(id) ON DELETE CASCADE,
-  exercise_type_id UUID NOT NULL REFERENCES exercise_types(id),
-  set_count INTEGER,
-  note TEXT,
+  session_id UUID NOT NULL REFERENCES workout_sessions(id) ON DELETE CASCADE,
+  exercise_id UUID NOT NULL REFERENCES user_exercises(id),
+  sort_order INT DEFAULT 0,  -- 운동 순서
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- 7. SetRecord 테이블 (세트별 기록)
-CREATE TABLE set_records (
+-- 인덱스
+CREATE INDEX idx_workout_records_session ON workout_records(session_id);
+
+-- ============================================
+-- 6. Workout Sets 테이블 (세트 정보)
+-- ============================================
+CREATE TABLE workout_sets (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  exercise_record_id UUID NOT NULL REFERENCES exercise_records(id) ON DELETE CASCADE,
-  set_order INTEGER NOT NULL,
-  weight FLOAT,
-  reps INTEGER,
-  time_min FLOAT,
-  speed FLOAT,
-  completed BOOLEAN DEFAULT TRUE,
+  record_id UUID NOT NULL REFERENCES workout_records(id) ON DELETE CASCADE,
+  set_number INT NOT NULL,
+
+  -- 일반 운동용
+  weight DECIMAL(6,2),    -- kg (선택, 풀업 등은 NULL)
+  reps INT,               -- 횟수 (일반 운동시 필수)
+
+  -- 유산소용
+  distance DECIMAL(6,2),  -- km (선택, 버피 등은 NULL)
+  duration INT,           -- 시간 (초, 유산소시 필수)
+
+  notes TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
--- ============================================
--- 인덱스 (성능 최적화)
--- ============================================
-CREATE INDEX idx_workout_days_user_id ON workout_days(user_id);
-CREATE INDEX idx_workout_days_date ON workout_days(date);
-CREATE INDEX idx_exercise_records_workout_day_id ON exercise_records(workout_day_id);
-CREATE INDEX idx_set_records_exercise_record_id ON set_records(exercise_record_id);
+-- 인덱스
+CREATE INDEX idx_workout_sets_record ON workout_sets(record_id);
 
 -- ============================================
--- 초기 데이터 - 부위 다국어
+-- 향후 확장: 유사 이름 매칭 테이블
 -- ============================================
-INSERT INTO body_part_i18n (body_part, language, name) VALUES
--- Back (등)
-('back', 'en', 'Back'),
-('back', 'ko', '등'),
-('back', 'zh', '背'),
-('back', 'ja', '背中'),
+-- Phase 1: normalized_name 필드 활용 (공백 제거, 소문자 변환)
+-- Phase 2: 아래 테이블로 유저가 직접 그룹핑
+-- Phase 3: AI 기반 자동 매칭 추천
 
--- Shoulder (어깨)
-('shoulder', 'en', 'Shoulder'),
-('shoulder', 'ko', '어깨'),
-('shoulder', 'zh', '肩膀'),
-('shoulder', 'ja', '肩'),
-
--- Chest (가슴)
-('chest', 'en', 'Chest'),
-('chest', 'ko', '가슴'),
-('chest', 'zh', '胸部'),
-('chest', 'ja', '胸'),
-
--- Biceps (이두)
-('biceps', 'en', 'Biceps'),
-('biceps', 'ko', '이두'),
-('biceps', 'zh', '二头肌'),
-('biceps', 'ja', '上腕二頭筋'),
-
--- Triceps (삼두)
-('triceps', 'en', 'Triceps'),
-('triceps', 'ko', '삼두'),
-('triceps', 'zh', '三头肌'),
-('triceps', 'ja', '上腕三頭筋'),
-
--- Legs (다리)
-('legs', 'en', 'Legs'),
-('legs', 'ko', '다리'),
-('legs', 'zh', '腿'),
-('legs', 'ja', '脚'),
-
--- Core (복근)
-('core', 'en', 'Core/Abs'),
-('core', 'ko', '복근'),
-('core', 'zh', '核心'),
-('core', 'ja', 'コア'),
-
--- Cardio (유산소)
-('cardio', 'en', 'Cardio'),
-('cardio', 'ko', '유산소'),
-('cardio', 'zh', '有氧运动'),
-('cardio', 'ja', '有酸素運動');
-
--- ============================================
--- 초기 데이터 - 운동 종목 (원본 - 영어)
--- ============================================
-INSERT INTO exercise_types (name, body_part, type, description) VALUES
--- Back (등)
-('Pull Up', 'back', 'reps', 'Back exercise'),
-('Lat Pulldown', 'back', 'weight', 'Back exercise'),
-('Barbell Row', 'back', 'weight', 'Back exercise'),
-('Dumbbell Row', 'back', 'weight', 'Back exercise'),
-('Seated Row', 'back', 'weight', 'Back exercise'),
-
--- Shoulder (어깨)
-('Shoulder Press', 'shoulder', 'weight', 'Shoulder exercise'),
-('Military Press', 'shoulder', 'weight', 'Shoulder exercise'),
-('Lateral Raise', 'shoulder', 'weight', 'Shoulder exercise'),
-('Overhead Press', 'shoulder', 'weight', 'Shoulder exercise'),
-
--- Chest (가슴)
-('Bench Press', 'chest', 'weight', 'Chest exercise'),
-('Dumbbell Press', 'chest', 'weight', 'Chest exercise'),
-('Incline Bench Press', 'chest', 'weight', 'Chest exercise'),
-('Cable Fly', 'chest', 'weight', 'Chest exercise'),
-('Push Up', 'chest', 'reps', 'Chest exercise'),
-
--- Biceps (이두)
-('Barbell Curl', 'biceps', 'weight', 'Biceps exercise'),
-('Dumbbell Curl', 'biceps', 'weight', 'Biceps exercise'),
-('Hammer Curl', 'biceps', 'weight', 'Biceps exercise'),
-('Cable Curl', 'biceps', 'weight', 'Biceps exercise'),
-
--- Triceps (삼두)
-('Triceps Dips', 'triceps', 'reps', 'Triceps exercise'),
-('Triceps Pushdown', 'triceps', 'weight', 'Triceps exercise'),
-('Overhead Extension', 'triceps', 'weight', 'Triceps exercise'),
-('Close Grip Bench Press', 'triceps', 'weight', 'Triceps exercise'),
-
--- Legs (다리)
-('Squat', 'legs', 'weight', 'Leg exercise'),
-('Leg Press', 'legs', 'weight', 'Leg exercise'),
-('Deadlift', 'legs', 'weight', 'Full body exercise'),
-('Leg Curl', 'legs', 'weight', 'Leg exercise'),
-('Leg Extension', 'legs', 'weight', 'Leg exercise'),
-('Lunges', 'legs', 'weight', 'Leg exercise'),
-
--- Core (복근)
-('Crunch', 'core', 'reps', 'Core exercise'),
-('Hanging Leg Raise', 'core', 'reps', 'Core exercise'),
-('Plank', 'core', 'time_speed', 'Core exercise'),
-('Ab Wheel', 'core', 'reps', 'Core exercise'),
-
--- Cardio (유산소)
-('Running', 'cardio', 'time_speed', 'Cardio exercise'),
-('Cycling', 'cardio', 'time_speed', 'Cardio exercise'),
-('Treadmill', 'cardio', 'time_speed', 'Cardio exercise'),
-('Rowing Machine', 'cardio', 'time_speed', 'Cardio exercise'),
-('Elliptical', 'cardio', 'time_speed', 'Cardio exercise');
-
--- ============================================
--- 운동 다국어 번역 (한국어)
--- ============================================
-INSERT INTO exercise_types_i18n (exercise_type_id, language, name, description) VALUES
--- Back (등)
-((SELECT id FROM exercise_types WHERE name = 'Pull Up'), 'ko', '풀업', '등 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Lat Pulldown'), 'ko', '랫풀다운', '등 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Barbell Row'), 'ko', '바벨로우', '등 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Dumbbell Row'), 'ko', '덤벨로우', '등 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Seated Row'), 'ko', '시티드로우', '등 운동'),
-
--- Shoulder (어깨)
-((SELECT id FROM exercise_types WHERE name = 'Shoulder Press'), 'ko', '숄더프레스', '어깨 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Military Press'), 'ko', '밀리터리프레스', '어깨 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Lateral Raise'), 'ko', '사이드레이즈', '어깨 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Overhead Press'), 'ko', '오버헤드프레스', '어깨 운동'),
-
--- Chest (가슴)
-((SELECT id FROM exercise_types WHERE name = 'Bench Press'), 'ko', '벤치프레스', '가슴 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Dumbbell Press'), 'ko', '덤벨프레스', '가슴 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Incline Bench Press'), 'ko', '인클라인벤치프레스', '가슴 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Cable Fly'), 'ko', '케이블플라이', '가슴 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Push Up'), 'ko', '푸시업', '가슴 운동'),
-
--- Biceps (이두)
-((SELECT id FROM exercise_types WHERE name = 'Barbell Curl'), 'ko', '바벨컬', '이두 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Dumbbell Curl'), 'ko', '덤벨컬', '이두 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Hammer Curl'), 'ko', '해머컬', '이두 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Cable Curl'), 'ko', '케이블컬', '이두 운동'),
-
--- Triceps (삼두)
-((SELECT id FROM exercise_types WHERE name = 'Triceps Dips'), 'ko', '삼두 딥스', '삼두 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Triceps Pushdown'), 'ko', '트라이셉스 푸시다운', '삼두 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Overhead Extension'), 'ko', '오버헤드 익스텐션', '삼두 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Close Grip Bench Press'), 'ko', '클로즈그립벤치프레스', '삼두 운동'),
-
--- Legs (다리)
-((SELECT id FROM exercise_types WHERE name = 'Squat'), 'ko', '스쿼트', '다리 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Leg Press'), 'ko', '레그프레스', '다리 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Deadlift'), 'ko', '데드리프트', '전신 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Leg Curl'), 'ko', '레그컬', '다리 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Leg Extension'), 'ko', '레그익스텐션', '다리 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Lunges'), 'ko', '런지', '다리 운동'),
-
--- Core (복근)
-((SELECT id FROM exercise_types WHERE name = 'Crunch'), 'ko', '크런치', '복근 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Hanging Leg Raise'), 'ko', '행드레그레이즈', '복근 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Plank'), 'ko', '플랭크', '복근 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Ab Wheel'), 'ko', '복근 휠', '복근 운동'),
-
--- Cardio (유산소)
-((SELECT id FROM exercise_types WHERE name = 'Running'), 'ko', '런닝', '유산소 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Cycling'), 'ko', '자전거', '유산소 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Treadmill'), 'ko', '트레드밀', '유산소 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Rowing Machine'), 'ko', '로잉머신', '유산소 운동'),
-((SELECT id FROM exercise_types WHERE name = 'Elliptical'), 'ko', '엘립티컬', '유산소 운동');
-
--- ============================================
--- 운동 다국어 번역 (중국어)
--- ============================================
-INSERT INTO exercise_types_i18n (exercise_type_id, language, name, description) VALUES
--- Back (등)
-((SELECT id FROM exercise_types WHERE name = 'Pull Up'), 'zh', '引体向上', '背部运动'),
-((SELECT id FROM exercise_types WHERE name = 'Lat Pulldown'), 'zh', '宽握下拉', '背部运动'),
-((SELECT id FROM exercise_types WHERE name = 'Barbell Row'), 'zh', '杠铃划船', '背部运动'),
-((SELECT id FROM exercise_types WHERE name = 'Dumbbell Row'), 'zh', '哑铃划船', '背部运动'),
-((SELECT id FROM exercise_types WHERE name = 'Seated Row'), 'zh', '坐姿划船', '背部运动'),
-
--- Shoulder (어깨)
-((SELECT id FROM exercise_types WHERE name = 'Shoulder Press'), 'zh', '肩推', '肩膀运动'),
-((SELECT id FROM exercise_types WHERE name = 'Military Press'), 'zh', '军事推举', '肩膀运动'),
-((SELECT id FROM exercise_types WHERE name = 'Lateral Raise'), 'zh', '侧平举', '肩膀运动'),
-((SELECT id FROM exercise_types WHERE name = 'Overhead Press'), 'zh', '头上推举', '肩膀运动'),
-
--- Chest (가슴)
-((SELECT id FROM exercise_types WHERE name = 'Bench Press'), 'zh', '卧推', '胸部运动'),
-((SELECT id FROM exercise_types WHERE name = 'Dumbbell Press'), 'zh', '哑铃卧推', '胸部运动'),
-((SELECT id FROM exercise_types WHERE name = 'Incline Bench Press'), 'zh', '上斜卧推', '胸部运动'),
-((SELECT id FROM exercise_types WHERE name = 'Cable Fly'), 'zh', '绳索夹胸', '胸部运动'),
-((SELECT id FROM exercise_types WHERE name = 'Push Up'), 'zh', '俯卧撑', '胸部运动'),
-
--- Biceps (이두)
-((SELECT id FROM exercise_types WHERE name = 'Barbell Curl'), 'zh', '杠铃弯举', '二头肌运动'),
-((SELECT id FROM exercise_types WHERE name = 'Dumbbell Curl'), 'zh', '哑铃弯举', '二头肌运动'),
-((SELECT id FROM exercise_types WHERE name = 'Hammer Curl'), 'zh', '锤式弯举', '二头肌运动'),
-((SELECT id FROM exercise_types WHERE name = 'Cable Curl'), 'zh', '绳索弯举', '二头肌运动'),
-
--- Triceps (삼두)
-((SELECT id FROM exercise_types WHERE name = 'Triceps Dips'), 'zh', '三头肌下压', '三头肌运动'),
-((SELECT id FROM exercise_types WHERE name = 'Triceps Pushdown'), 'zh', '绳索下压', '三头肌运动'),
-((SELECT id FROM exercise_types WHERE name = 'Overhead Extension'), 'zh', '头顶伸展', '三头肌运动'),
-((SELECT id FROM exercise_types WHERE name = 'Close Grip Bench Press'), 'zh', '窄握卧推', '三头肌运动'),
-
--- Legs (다리)
-((SELECT id FROM exercise_types WHERE name = 'Squat'), 'zh', '深蹲', '腿部运动'),
-((SELECT id FROM exercise_types WHERE name = 'Leg Press'), 'zh', '腿部推蹬机', '腿部运动'),
-((SELECT id FROM exercise_types WHERE name = 'Deadlift'), 'zh', '硬拉', '全身运动'),
-((SELECT id FROM exercise_types WHERE name = 'Leg Curl'), 'zh', '腿部弯举', '腿部运动'),
-((SELECT id FROM exercise_types WHERE name = 'Leg Extension'), 'zh', '腿部伸展', '腿部运动'),
-((SELECT id FROM exercise_types WHERE name = 'Lunges'), 'zh', '弓步', '腿部运动'),
-
--- Core (복근)
-((SELECT id FROM exercise_types WHERE name = 'Crunch'), 'zh', '仰卧起坐', '核心运动'),
-((SELECT id FROM exercise_types WHERE name = 'Hanging Leg Raise'), 'zh', '悬杆抬腿', '核心运动'),
-((SELECT id FROM exercise_types WHERE name = 'Plank'), 'zh', '平板支撑', '核心运动'),
-((SELECT id FROM exercise_types WHERE name = 'Ab Wheel'), 'zh', '腹肌滑轮', '核心运动'),
-
--- Cardio (유산소)
-((SELECT id FROM exercise_types WHERE name = 'Running'), 'zh', '跑步', '有氧运动'),
-((SELECT id FROM exercise_types WHERE name = 'Cycling'), 'zh', '骑自行车', '有氧运动'),
-((SELECT id FROM exercise_types WHERE name = 'Treadmill'), 'zh', '跑步机', '有氧运动'),
-((SELECT id FROM exercise_types WHERE name = 'Rowing Machine'), 'zh', '划船机', '有氧运动'),
-((SELECT id FROM exercise_types WHERE name = 'Elliptical'), 'zh', '椭圆机', '有氧运动');
-
--- ============================================
--- 운동 다국어 번역 (일본어)
--- ============================================
-INSERT INTO exercise_types_i18n (exercise_type_id, language, name, description) VALUES
--- Back (등)
-((SELECT id FROM exercise_types WHERE name = 'Pull Up'), 'ja', 'プルアップ', '背中の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Lat Pulldown'), 'ja', 'ラットプルダウン', '背中の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Barbell Row'), 'ja', 'バーベルロウ', '背中の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Dumbbell Row'), 'ja', 'ダンベルロウ', '背中の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Seated Row'), 'ja', 'シーテッドロウ', '背中の運動'),
-
--- Shoulder (어깨)
-((SELECT id FROM exercise_types WHERE name = 'Shoulder Press'), 'ja', 'ショルダープレス', '肩の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Military Press'), 'ja', 'ミリタリープレス', '肩の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Lateral Raise'), 'ja', 'サイドレイズ', '肩の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Overhead Press'), 'ja', 'オーバーヘッドプレス', '肩の運動'),
-
--- Chest (가슴)
-((SELECT id FROM exercise_types WHERE name = 'Bench Press'), 'ja', 'ベンチプレス', '胸の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Dumbbell Press'), 'ja', 'ダンベルプレス', '胸の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Incline Bench Press'), 'ja', 'インクラインベンチプレス', '胸の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Cable Fly'), 'ja', 'ケーブルフライ', '胸の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Push Up'), 'ja', 'プッシュアップ', '胸の運動'),
-
--- Biceps (이두)
-((SELECT id FROM exercise_types WHERE name = 'Barbell Curl'), 'ja', 'バーベルカール', '上腕二頭筋の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Dumbbell Curl'), 'ja', 'ダンベルカール', '上腕二頭筋の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Hammer Curl'), 'ja', 'ハンマーカール', '上腕二頭筋の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Cable Curl'), 'ja', 'ケーブルカール', '上腕二頭筋の運動'),
-
--- Triceps (삼두)
-((SELECT id FROM exercise_types WHERE name = 'Triceps Dips'), 'ja', 'トライセプスディップス', '上腕三頭筋の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Triceps Pushdown'), 'ja', 'トライセプスプッシュダウン', '上腕三頭筋の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Overhead Extension'), 'ja', 'オーバーヘッドエクステンション', '上腕三頭筋の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Close Grip Bench Press'), 'ja', 'クローズグリップベンチプレス', '上腕三頭筋の運動'),
-
--- Legs (다리)
-((SELECT id FROM exercise_types WHERE name = 'Squat'), 'ja', 'スクワット', '脚の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Leg Press'), 'ja', 'レッグプレス', '脚の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Deadlift'), 'ja', 'デッドリフト', '全身運動'),
-((SELECT id FROM exercise_types WHERE name = 'Leg Curl'), 'ja', 'レッグカール', '脚の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Leg Extension'), 'ja', 'レッグエクステンション', '脚の運動'),
-((SELECT id FROM exercise_types WHERE name = 'Lunges'), 'ja', 'ランジ', '脚の運動'),
-
--- Core (복근)
-((SELECT id FROM exercise_types WHERE name = 'Crunch'), 'ja', 'クランチ', 'コアの運動'),
-((SELECT id FROM exercise_types WHERE name = 'Hanging Leg Raise'), 'ja', 'ハンギングレッグレイズ', 'コアの運動'),
-((SELECT id FROM exercise_types WHERE name = 'Plank'), 'ja', 'プランク', 'コアの運動'),
-((SELECT id FROM exercise_types WHERE name = 'Ab Wheel'), 'ja', '腹筋ローラー', 'コアの運動'),
-
--- Cardio (유산소)
-((SELECT id FROM exercise_types WHERE name = 'Running'), 'ja', 'ランニング', '有酸素運動'),
-((SELECT id FROM exercise_types WHERE name = 'Cycling'), 'ja', 'サイクリング', '有酸素運動'),
-((SELECT id FROM exercise_types WHERE name = 'Treadmill'), 'ja', 'トレッドミル', '有酸素運動'),
-((SELECT id FROM exercise_types WHERE name = 'Rowing Machine'), 'ja', 'ローイングマシン', '有酸素運動'),
-((SELECT id FROM exercise_types WHERE name = 'Elliptical'), 'ja', 'エリプティカル', '有酸素運動');
+-- CREATE TABLE exercise_aliases (
+--   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+--   canonical_exercise_id UUID NOT NULL REFERENCES user_exercises(id),
+--   alias_exercise_id UUID NOT NULL REFERENCES user_exercises(id),
+--   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+-- );
+-- 예: "벤치프레스", "벤치 프레스", "벤프" → 하나의 canonical로 연결
 
 -- ============================================
 -- Row Level Security (RLS) 설정
 -- ============================================
 
+-- Users 테이블
 ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE workout_days ENABLE ROW LEVEL SECURITY;
-ALTER TABLE exercise_records ENABLE ROW LEVEL SECURITY;
-ALTER TABLE set_records ENABLE ROW LEVEL SECURITY;
 
--- Users 테이블 정책
 CREATE POLICY "Users can view own data"
   ON users FOR SELECT
   USING (auth.uid() = id);
 
--- WorkoutDays 테이블 정책
-CREATE POLICY "Users can view own workouts"
-  ON workout_days FOR SELECT
+CREATE POLICY "Users can update own data"
+  ON users FOR UPDATE
+  USING (auth.uid() = id);
+
+-- Exercise Categories (공개 - 모두 읽기 가능)
+ALTER TABLE exercise_categories ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Categories are public"
+  ON exercise_categories FOR SELECT
+  USING (true);
+
+-- User Exercises
+ALTER TABLE user_exercises ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own exercises"
+  ON user_exercises FOR SELECT
   USING (user_id = auth.uid());
 
-CREATE POLICY "Users can insert own workouts"
-  ON workout_days FOR INSERT
+CREATE POLICY "Users can insert own exercises"
+  ON user_exercises FOR INSERT
   WITH CHECK (user_id = auth.uid());
 
-CREATE POLICY "Users can update own workouts"
-  ON workout_days FOR UPDATE
+CREATE POLICY "Users can update own exercises"
+  ON user_exercises FOR UPDATE
   USING (user_id = auth.uid());
 
-CREATE POLICY "Users can delete own workouts"
-  ON workout_days FOR DELETE
+CREATE POLICY "Users can delete own exercises"
+  ON user_exercises FOR DELETE
   USING (user_id = auth.uid());
 
--- ExerciseRecords 테이블 정책
-CREATE POLICY "Users can view own exercise records"
-  ON exercise_records FOR SELECT
+-- Workout Sessions
+ALTER TABLE workout_sessions ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own sessions"
+  ON workout_sessions FOR SELECT
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Users can insert own sessions"
+  ON workout_sessions FOR INSERT
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can update own sessions"
+  ON workout_sessions FOR UPDATE
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Users can delete own sessions"
+  ON workout_sessions FOR DELETE
+  USING (user_id = auth.uid());
+
+-- Workout Records
+ALTER TABLE workout_records ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own records"
+  ON workout_records FOR SELECT
   USING (
-    workout_day_id IN (
-      SELECT id FROM workout_days WHERE user_id = auth.uid()
+    session_id IN (
+      SELECT id FROM workout_sessions WHERE user_id = auth.uid()
     )
   );
 
-CREATE POLICY "Users can insert own exercise records"
-  ON exercise_records FOR INSERT
+CREATE POLICY "Users can insert own records"
+  ON workout_records FOR INSERT
   WITH CHECK (
-    workout_day_id IN (
-      SELECT id FROM workout_days WHERE user_id = auth.uid()
+    session_id IN (
+      SELECT id FROM workout_sessions WHERE user_id = auth.uid()
     )
   );
 
-CREATE POLICY "Users can update own exercise records"
-  ON exercise_records FOR UPDATE
+CREATE POLICY "Users can update own records"
+  ON workout_records FOR UPDATE
   USING (
-    workout_day_id IN (
-      SELECT id FROM workout_days WHERE user_id = auth.uid()
+    session_id IN (
+      SELECT id FROM workout_sessions WHERE user_id = auth.uid()
     )
   );
 
-CREATE POLICY "Users can delete own exercise records"
-  ON exercise_records FOR DELETE
+CREATE POLICY "Users can delete own records"
+  ON workout_records FOR DELETE
   USING (
-    workout_day_id IN (
-      SELECT id FROM workout_days WHERE user_id = auth.uid()
+    session_id IN (
+      SELECT id FROM workout_sessions WHERE user_id = auth.uid()
     )
   );
 
--- SetRecords 테이블 정책
-CREATE POLICY "Users can view own set records"
-  ON set_records FOR SELECT
+-- Workout Sets
+ALTER TABLE workout_sets ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own sets"
+  ON workout_sets FOR SELECT
   USING (
-    exercise_record_id IN (
-      SELECT id FROM exercise_records 
-      WHERE workout_day_id IN (
-        SELECT id FROM workout_days WHERE user_id = auth.uid()
+    record_id IN (
+      SELECT id FROM workout_records
+      WHERE session_id IN (
+        SELECT id FROM workout_sessions WHERE user_id = auth.uid()
       )
     )
   );
 
-CREATE POLICY "Users can insert own set records"
-  ON set_records FOR INSERT
+CREATE POLICY "Users can insert own sets"
+  ON workout_sets FOR INSERT
   WITH CHECK (
-    exercise_record_id IN (
-      SELECT id FROM exercise_records 
-      WHERE workout_day_id IN (
-        SELECT id FROM workout_days WHERE user_id = auth.uid()
+    record_id IN (
+      SELECT id FROM workout_records
+      WHERE session_id IN (
+        SELECT id FROM workout_sessions WHERE user_id = auth.uid()
       )
     )
   );
 
-CREATE POLICY "Users can update own set records"
-  ON set_records FOR UPDATE
+CREATE POLICY "Users can update own sets"
+  ON workout_sets FOR UPDATE
   USING (
-    exercise_record_id IN (
-      SELECT id FROM exercise_records 
-      WHERE workout_day_id IN (
-        SELECT id FROM workout_days WHERE user_id = auth.uid()
+    record_id IN (
+      SELECT id FROM workout_records
+      WHERE session_id IN (
+        SELECT id FROM workout_sessions WHERE user_id = auth.uid()
       )
     )
   );
 
-CREATE POLICY "Users can delete own set records"
-  ON set_records FOR DELETE
+CREATE POLICY "Users can delete own sets"
+  ON workout_sets FOR DELETE
   USING (
-    exercise_record_id IN (
-      SELECT id FROM exercise_records 
-      WHERE workout_day_id IN (
-        SELECT id FROM workout_days WHERE user_id = auth.uid()
+    record_id IN (
+      SELECT id FROM workout_records
+      WHERE session_id IN (
+        SELECT id FROM workout_sessions WHERE user_id = auth.uid()
       )
     )
   );
 
--- ExerciseTypes와 번역 테이블은 공개 (모두 읽기만 가능)
-ALTER TABLE exercise_types ENABLE ROW LEVEL SECURITY;
-ALTER TABLE exercise_types_i18n ENABLE ROW LEVEL SECURITY;
-ALTER TABLE body_part_i18n ENABLE ROW LEVEL SECURITY;
+-- ============================================
+-- ERD (Entity Relationship Diagram)
+-- ============================================
+--
+-- ┌─────────────────┐
+-- │     users       │
+-- ├─────────────────┤
+-- │ id (PK)         │
+-- │ email           │
+-- │ name            │
+-- │ language (ja)   │───────────────────────────────────┐
+-- └─────────────────┘                                   │
+--         │                                             │
+--         │ 1:N                                         │
+--         ▼                                             │
+-- ┌─────────────────┐     N:1    ┌────────────────────┐ │
+-- │ user_exercises  │───────────▶│exercise_categories │ │
+-- ├─────────────────┤            ├────────────────────┤ │
+-- │ id (PK)         │            │ id (PK)            │ │
+-- │ user_id (FK)    │            │ name_ja/ko/en      │ │
+-- │ category_id(FK) │            │ is_cardio          │ │
+-- │ name (유저입력)   │            └────────────────────┘ │
+-- │ normalized_name │                                   │
+-- └─────────────────┘                                   │
+--         │                                             │
+--         │ 1:N                                         │
+--         ▼                                             │
+-- ┌─────────────────┐     N:1    ┌────────────────────┐ │
+-- │ workout_records │───────────▶│ workout_sessions   │◀┘
+-- ├─────────────────┤            ├────────────────────┤
+-- │ id (PK)         │            │ id (PK)            │
+-- │ session_id (FK) │            │ user_id (FK)       │
+-- │ exercise_id(FK) │            │ date               │
+-- │ sort_order      │            │ notes              │
+-- └─────────────────┘            └────────────────────┘
+--         │
+--         │ 1:N
+--         ▼
+-- ┌─────────────────┐
+-- │  workout_sets   │
+-- ├─────────────────┤
+-- │ id (PK)         │
+-- │ record_id (FK)  │
+-- │ set_number      │
+-- │ weight (선택)   │  ← 일반 운동
+-- │ reps (필수)     │  ← 일반 운동
+-- │ distance (선택) │  ← 유산소
+-- │ duration (필수) │  ← 유산소
+-- └─────────────────┘
 
-CREATE POLICY "Exercise types are public"
-  ON exercise_types FOR SELECT
-  USING (true);
+-- ============================================
+-- 데이터 흐름 예시
+-- ============================================
 
-CREATE POLICY "Exercise types translations are public"
-  ON exercise_types_i18n FOR SELECT
-  USING (true);
+-- 예시 1: 가슴 운동 (벤치프레스 3세트)
+--
+-- 1. 날짜 선택: 2025-01-14
+-- INSERT INTO workout_sessions (id, user_id, date)
+-- VALUES ('session-1', 'user-1', '2025-01-14');
+--
+-- 2. 카테고리: 가슴 (chest) → 종목 입력: "벤치프레스"
+-- INSERT INTO user_exercises (id, user_id, category_id, name, normalized_name)
+-- VALUES ('exercise-1', 'user-1', 'chest', '벤치프레스', 'benchpress');
+--
+-- 3. 운동 기록 생성
+-- INSERT INTO workout_records (id, session_id, exercise_id, sort_order)
+-- VALUES ('record-1', 'session-1', 'exercise-1', 1);
+--
+-- 4. 세트 입력 (무게는 선택, 횟수는 필수)
+-- INSERT INTO workout_sets (record_id, set_number, weight, reps) VALUES
+--   ('record-1', 1, 60, 10),   -- 60kg x 10회
+--   ('record-1', 2, 70, 8),    -- 70kg x 8회
+--   ('record-1', 3, 80, 6);    -- 80kg x 6회
 
-CREATE POLICY "Body part translations are public"
-  ON body_part_i18n FOR SELECT
-  USING (true);
+-- 예시 2: 등 운동 (풀업 - 무게 없음)
+-- INSERT INTO workout_sets (record_id, set_number, weight, reps) VALUES
+--   ('record-2', 1, NULL, 10),  -- 자체체중 x 10회
+--   ('record-2', 2, NULL, 8),   -- 자체체중 x 8회
+--   ('record-2', 3, NULL, 6);   -- 자체체중 x 6회
+
+-- 예시 3: 유산소 (러닝 - 거리/시간)
+-- INSERT INTO user_exercises (id, user_id, category_id, name)
+-- VALUES ('exercise-3', 'user-1', 'cardio', '러닝');
+--
+-- INSERT INTO workout_sets (record_id, set_number, distance, duration) VALUES
+--   ('record-3', 1, 5.0, 1800);  -- 5km, 30분(1800초)
+
+-- 예시 4: 유산소 (버피 - 거리 없음, 시간만)
+-- INSERT INTO workout_sets (record_id, set_number, distance, duration) VALUES
+--   ('record-4', 1, NULL, 600);  -- 10분(600초)
+
+-- ============================================
+-- 테이블 요약
+-- ============================================
+-- | 테이블명           | 설명                    | 데이터 소스   |
+-- |--------------------|-------------------------|---------------|
+-- | users              | 사용자 정보             | 시스템/유저   |
+-- | exercise_categories| 운동 카테고리 (7개)     | 시스템 (고정) |
+-- | user_exercises     | 유저 운동 종목          | 유저 입력     |
+-- | workout_sessions   | 운동 세션 (날짜별)      | 유저 입력     |
+-- | workout_records    | 운동 기록               | 유저 입력     |
+-- | workout_sets       | 세트 정보               | 유저 입력     |
+
+-- ============================================
+-- 변경 이력
+-- ============================================
+-- | 버전 | 날짜       | 변경 내용                              |
+-- |------|------------|----------------------------------------|
+-- | 1.0  | 2025-01-XX | 초기 설계 - 시스템 정의 운동 종목       |
+-- | 2.0  | 2025-01-14 | 유저 입력 기반으로 변경                 |
+-- |      |            | - exercise_types → user_exercises       |
+-- |      |            | - 카테고리 7개로 변경                   |
+-- |      |            | - 세트 필드 정리 (weight/reps/distance/duration) |
+-- |      |            | - language 기본값 'ja'로 변경           |
