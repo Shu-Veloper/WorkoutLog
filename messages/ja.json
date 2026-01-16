@@ -17,7 +17,10 @@
   "home": {
     "workoutCalendar": "トレーニングカレンダー",
     "workoutRecord": "トレーニング記録",
-    "loading": "読み込み中..."
+    "loading": "読み込み中...",
+    "calendar": "カレンダー",
+    "memo": "メモ",
+    "memoPlaceholder": "メモを入力..."
   },
   "recording": {
     "title": "トレーニング記録",

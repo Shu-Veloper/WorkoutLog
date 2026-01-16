@@ -8,15 +8,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useLocale } from "@/contexts/LocaleContext";
 import type { User as SupabaseUser } from "@supabase/supabase-js";
 
-interface NavBarProps {
-  isRecordPage?: boolean;
-  onViewChange?: (isRecord: boolean) => void;
-}
-
-export const NavBar = ({ isRecordPage, onViewChange }: NavBarProps) => {
-  // Suppress unused variable warnings - these props may be used in the future
-  void isRecordPage;
-  void onViewChange;
+export const NavBar = () => {
   const [mounted, setMounted] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const [isLangMenuOpen, setIsLangMenuOpen] = useState(false);
@@ -120,32 +112,6 @@ export const NavBar = ({ isRecordPage, onViewChange }: NavBarProps) => {
               <span className="hidden md:block">{t("nav.logo")}</span>
             </button>
           </div>
-
-          {/* Center - View Toggle Switch */}
-          {/* <div className="flex items-center gap-2 md:gap-3 bg-gray-100 dark:bg-gray-700 px-3 md:px-6 py-2 md:py-3 rounded-full">
-            <span
-              className={`text-xs md:text-sm font-semibold transition-colors ${
-                !isRecordPage
-                  ? "text-blue-600 dark:text-blue-400"
-                  : "text-gray-500 dark:text-gray-400"
-              }`}
-            >
-              달력
-            </span>
-            <Switch
-              checked={isRecordPage}
-              onCheckedChange={onViewChange}
-            />
-            <span
-              className={`text-xs md:text-sm font-semibold transition-colors ${
-                isRecordPage
-                  ? "text-blue-600 dark:text-blue-400"
-                  : "text-gray-500 dark:text-gray-400"
-              }`}
-            >
-              기록
-            </span>
-          </div> */}
 
           {/* Right - Language, Theme Toggle & Login Button or User Menu */}
           <div className="flex items-center gap-2">
