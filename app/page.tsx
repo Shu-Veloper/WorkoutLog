@@ -9,17 +9,11 @@ import { FooterTab, TabType } from "./components/FooterTab";
 
 export default function Home() {
   const [activeTab, setActiveTab] = useState<TabType>("home");
-  const [isRecordPage, setIsRecordPage] = useState(false);
 
   const renderContent = () => {
     switch (activeTab) {
       case "home":
-        return (
-          <HomeTabContent
-            isRecordPage={isRecordPage}
-            onRecordPageChange={setIsRecordPage}
-          />
-        );
+        return <HomeTabContent />;
       case "record":
         return <RecordingView />;
       case "nutrition":
@@ -32,7 +26,7 @@ export default function Home() {
   return (
     <div className="font-sans min-h-screen bg-gray-50 dark:bg-gray-900">
       {/* 네비게이션 헤더 */}
-      <NavBar isRecordPage={isRecordPage} onViewChange={setIsRecordPage} />
+      <NavBar />
 
       {/* 메인 컨텐츠 - Footer 높이만큼 padding 추가 */}
       <main className="max-w-7xl mx-auto px-4 py-8 pb-24">

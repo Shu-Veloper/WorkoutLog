@@ -17,7 +17,10 @@
   "home": {
     "workoutCalendar": "운동 달력",
     "workoutRecord": "운동 기록",
-    "loading": "로딩 중..."
+    "loading": "로딩 중...",
+    "calendar": "달력",
+    "memo": "메모",
+    "memoPlaceholder": "메모 입력..."
   },
   "recording": {
     "title": "운동 기록",

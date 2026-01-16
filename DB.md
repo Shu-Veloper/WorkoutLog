@@ -97,13 +97,13 @@ CREATE TABLE workout_sessions (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   date DATE NOT NULL,
-  notes TEXT,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
 
   -- 같은 유저, 같은 날짜에 하나의 세션만
   UNIQUE(user_id, date)
 );
+-- 메모는 daily_memos 테이블에서 통합 관리
 
 -- 인덱스
 CREATE INDEX idx_workout_sessions_user ON workout_sessions(user_id);
@@ -145,6 +145,27 @@ CREATE TABLE workout_sets (
 
 -- 인덱스
 CREATE INDEX idx_workout_sets_record ON workout_sets(record_id);
+
+-- ============================================
+-- 7. Daily Memos 테이블 (날짜별 메모)
+-- ============================================
+-- 운동 기록과 별개로 매일 메모를 작성 가능
+-- 상세 메모 뷰에서 사용 (휴식일 메모, 컨디션 기록 등)
+CREATE TABLE daily_memos (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  date DATE NOT NULL,
+  content TEXT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+
+  -- 같은 유저, 같은 날짜에 하나의 메모만
+  UNIQUE(user_id, date)
+);
+
+-- 인덱스
+CREATE INDEX idx_daily_memos_user ON daily_memos(user_id);
+CREATE INDEX idx_daily_memos_date ON daily_memos(user_id, date);
 
 -- ============================================
 -- 향후 확장: 유사 이름 매칭 테이블
@@ -304,6 +325,25 @@ CREATE POLICY "Users can delete own sets"
     )
   );
 
+-- Daily Memos
+ALTER TABLE daily_memos ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own memos"
+  ON daily_memos FOR SELECT
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Users can insert own memos"
+  ON daily_memos FOR INSERT
+  WITH CHECK (user_id = auth.uid());
+
+CREATE POLICY "Users can update own memos"
+  ON daily_memos FOR UPDATE
+  USING (user_id = auth.uid());
+
+CREATE POLICY "Users can delete own memos"
+  ON daily_memos FOR DELETE
+  USING (user_id = auth.uid());
+
 -- ============================================
 -- ERD (Entity Relationship Diagram)
 -- ============================================
@@ -317,8 +357,18 @@ CREATE POLICY "Users can delete own sets"
 -- │ language (ja)   │───────────────────────────────────┐
 -- └─────────────────┘                                   │
 --         │                                             │
---         │ 1:N                                         │
---         ▼                                             │
+--         ├─────────────────────────────┐               │
+--         │ 1:N                         │ 1:N           │
+--         ▼                             ▼               │
+-- ┌─────────────────┐           ┌─────────────────┐     │
+-- │  daily_memos    │           │                 │     │
+-- ├─────────────────┤           │                 │     │
+-- │ id (PK)         │           │                 │     │
+-- │ user_id (FK)    │           │                 │     │
+-- │ date            │           │                 │     │
+-- │ content         │           │                 │     │
+-- └─────────────────┘           │                 │     │
+--                               ▼                 │     │
 -- ┌─────────────────┐     N:1    ┌────────────────────┐ │
 -- │ user_exercises  │───────────▶│exercise_categories │ │
 -- ├─────────────────┤            ├────────────────────┤ │
@@ -337,8 +387,8 @@ CREATE POLICY "Users can delete own sets"
 -- │ id (PK)         │            │ id (PK)            │
 -- │ session_id (FK) │            │ user_id (FK)       │
 -- │ exercise_id(FK) │            │ date               │
--- │ sort_order      │            │ notes              │
--- └─────────────────┘            └────────────────────┘
+-- │ sort_order      │            └────────────────────┘
+-- └─────────────────┘
 --         │
 --         │ 1:N
 --         ▼
@@ -401,11 +451,12 @@ CREATE POLICY "Users can delete own sets"
 -- | 테이블명           | 설명                    | 데이터 소스   |
 -- |--------------------|-------------------------|---------------|
 -- | users              | 사용자 정보             | 시스템/유저   |
--- | exercise_categories| 운동 카테고리 (7개)     | 시스템 (고정) |
+-- | exercise_categories| 운동 카테고리 (10개)    | 시스템 (고정) |
 -- | user_exercises     | 유저 운동 종목          | 유저 입력     |
 -- | workout_sessions   | 운동 세션 (날짜별)      | 유저 입력     |
 -- | workout_records    | 운동 기록               | 유저 입력     |
 -- | workout_sets       | 세트 정보               | 유저 입력     |
+-- | daily_memos        | 날짜별 메모 (메모 뷰용) | 유저 입력     |
 
 -- ============================================
 -- 변경 이력
@@ -415,6 +466,10 @@ CREATE POLICY "Users can delete own sets"
 -- | 1.0  | 2025-01-XX | 초기 설계 - 시스템 정의 운동 종목       |
 -- | 2.0  | 2025-01-14 | 유저 입력 기반으로 변경                 |
 -- |      |            | - exercise_types → user_exercises       |
--- |      |            | - 카테고리 7개로 변경                   |
+-- |      |            | - 카테고리 10개로 변경                  |
 -- |      |            | - 세트 필드 정리 (weight/reps/distance/duration) |
 -- |      |            | - language 기본값 'ja'로 변경           |
+-- | 2.1  | 2025-01-15 | daily_memos 테이블 추가                 |
+-- |      |            | - 캘린더 상세 메모 뷰 기능 지원         |
+-- |      |            | - workout_sessions.notes 필드 제거      |
+-- |      |            | - 모든 메모는 daily_memos로 통합        |

@@ -17,7 +17,10 @@
   "home": {
     "workoutCalendar": "Workout Calendar",
     "workoutRecord": "Workout Record",
-    "loading": "Loading..."
+    "loading": "Loading...",
+    "calendar": "Calendar",
+    "memo": "Memo",
+    "memoPlaceholder": "Enter memo..."
   },
   "recording": {
     "title": "Workout Record",
